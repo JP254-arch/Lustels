@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
-import logo from '../assets/logo.jpeg'; // Make sure the path is correct
+import React, { useState } from "react";
+import logo from "../assets/logo.jpeg"; // Ensure this path is correct
 
 const Navbar = () => {
-  const [open, setOpen] = useState(false);
-  const [userMenu, setUserMenu] = useState(false);
+  const [open, setOpen] = useState(false); // Mobile menu
+  const [userMenu, setUserMenu] = useState(false); // Dropdown menu
+
+  // Simulated authentication state (replace with real auth logic)
+  const [user, setUser] = useState(null);
+  // Example: { name: "JP Mbaga" } when logged in
+
+  const handleLogout = () => {
+    setUser(null); // Replace with real logout logic
+    setUserMenu(false);
+  };
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-20">
@@ -20,7 +29,13 @@ const Navbar = () => {
           <a href="/" className="text-gray-700 hover:text-blue-700 font-medium">Home</a>
           <a href="/about" className="text-gray-700 hover:text-blue-700 font-medium">About</a>
           <a href="/contact" className="text-gray-700 hover:text-blue-700 font-medium">Contact</a>
+          <a href="/hostels" className="text-gray-700 hover:text-blue-700 font-medium">Hostels</a>
+          <a href="/add-hostel" className="text-gray-700 hover:text-blue-700 font-medium">Add Hostel</a>
+          <a href="/client" className="text-gray-700 hover:text-blue-700 font-medium">Client Dashboard</a>
+          <a href="/warden" className="text-gray-700 hover:text-blue-700 font-medium">Warden Dashboard</a>
+          <a href="/admin" className="text-gray-700 hover:text-blue-700 font-medium">Admin Dashboard</a>
 
+          
           {/* User Menu */}
           <div className="relative">
             <button
@@ -30,13 +45,24 @@ const Navbar = () => {
               <i className="fa fa-user text-gray-700"></i>
             </button>
             {userMenu && (
-              <div className="absolute right-0 mt-3 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-40">
-                <a href="/login" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-                  Login
-                </a>
-                <a href="/register" className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100">
-                  Register
-                </a>
+              <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-40">
+                {user ? (
+                  <>
+                    <span className="block px-4 py-2 text-gray-700 font-medium">Hello, {user.name}</span>
+                    <a href="/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Dashboard</a>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <a href="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Login</a>
+                    <a href="/register" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Register</a>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -55,8 +81,24 @@ const Navbar = () => {
             <a href="/" className="px-4 py-2 hover:bg-gray-100 transition">Home</a>
             <a href="/about" className="px-4 py-2 hover:bg-gray-100 transition">About</a>
             <a href="/contact" className="px-4 py-2 hover:bg-gray-100 transition">Contact</a>
-            <a href="/login" className="px-4 py-2 hover:bg-gray-100 transition">Login</a>
-            <a href="/register" className="px-4 py-2 hover:bg-gray-100 transition">Register</a>
+
+            {user ? (
+              <>
+                <span className="block px-4 py-2 text-gray-700 font-medium">Hello, {user.name}</span>
+                <a href="/dashboard" className="px-4 py-2 hover:bg-gray-100 transition">Dashboard</a>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 transition"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <a href="/login" className="px-4 py-2 hover:bg-gray-100 transition">Login</a>
+                <a href="/register" className="px-4 py-2 hover:bg-gray-100 transition">Register</a>
+              </>
+            )}
           </div>
         )}
       </div>
