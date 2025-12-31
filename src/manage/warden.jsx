@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import WardenForm from "../Forms/Wardenform";
 
 const mockWardens = [
@@ -9,6 +8,8 @@ const mockWardens = [
     email: "john@example.com",
     assignedHostel: "Green View Hostel",
     contact: "0712345678",
+    gender: "male",
+    dob: "1990-05-15",
   },
   {
     id: 2,
@@ -16,6 +17,8 @@ const mockWardens = [
     email: "jane@example.com",
     assignedHostel: "Sunrise Hostel",
     contact: "0723456789",
+    gender: "female",
+    dob: "1992-08-22",
   },
 ];
 
@@ -23,7 +26,6 @@ export default function WardenManagement() {
   const [wardens, setWardens] = useState(mockWardens);
   const [editingWarden, setEditingWarden] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const navigate = useNavigate();
 
   const handleEdit = (warden) => {
     setEditingWarden(warden);
@@ -63,6 +65,8 @@ export default function WardenManagement() {
                   <th className="border p-2">Email</th>
                   <th className="border p-2">Assigned Hostel</th>
                   <th className="border p-2">Contact</th>
+                  <th className="border p-2">Gender</th>
+                  <th className="border p-2">Date of Birth</th>
                   <th className="border p-2">Actions</th>
                 </tr>
               </thead>
@@ -73,6 +77,8 @@ export default function WardenManagement() {
                     <td className="border p-2">{warden.email}</td>
                     <td className="border p-2">{warden.assignedHostel}</td>
                     <td className="border p-2">{warden.contact}</td>
+                    <td className="border p-2">{warden.gender}</td>
+                    <td className="border p-2">{warden.dob}</td>
                     <td className="border p-2">
                       <button
                         className="bg-blue-600 text-white px-3 py-1 rounded-xl"
@@ -88,10 +94,7 @@ export default function WardenManagement() {
           </div>
         </div>
       ) : (
-        <WardenForm
-          wardenData={editingWarden}
-          onSubmit={handleFormSubmit}
-        />
+        <WardenForm wardenData={editingWarden} onSubmit={handleFormSubmit} />
       )}
     </div>
   );

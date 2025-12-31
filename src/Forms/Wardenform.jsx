@@ -6,7 +6,11 @@ export default function WardenForm({ wardenData = null, onSubmit }) {
     email: "",
     assignedHostel: "",
     contact: "",
+    gender: "",
+    dob: "",
   });
+
+  const genderOptions = ["Male", "Female", "Other"];
 
   useEffect(() => {
     if (wardenData) {
@@ -22,7 +26,9 @@ export default function WardenForm({ wardenData = null, onSubmit }) {
     e.preventDefault();
     onSubmit(warden);
     alert(`Warden ${wardenData ? "updated" : "added"} successfully (mock)`);
-    if (!wardenData) setWarden({ name: "", email: "", assignedHostel: "", contact: "" });
+    if (!wardenData) {
+      setWarden({ name: "", email: "", assignedHostel: "", contact: "", gender: "", dob: "" });
+    }
   };
 
   return (
@@ -66,6 +72,28 @@ export default function WardenForm({ wardenData = null, onSubmit }) {
             onChange={handleChange}
             placeholder="Contact Number"
             className="border p-3 rounded-xl w-full"
+          />
+          {/* New Fields */}
+          <select
+            name="gender"
+            value={warden.gender}
+            onChange={handleChange}
+            className="border p-3 rounded-xl w-full"
+            required
+          >
+            <option value="">Select Gender</option>
+            {genderOptions.map((g) => (
+              <option key={g} value={g.toLowerCase()}>{g}</option>
+            ))}
+          </select>
+          <input
+            type="date"
+            name="dob"
+            value={warden.dob}
+            onChange={handleChange}
+            className="border p-3 rounded-xl w-full"
+            placeholder="Date of Birth"
+            required
           />
           <button
             type="submit"
