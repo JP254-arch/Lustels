@@ -30,7 +30,6 @@ const Navbar = () => {
           <a href="/about" className="text-gray-700 hover:text-blue-700 font-medium">About</a>
           <a href="/contact" className="text-gray-700 hover:text-blue-700 font-medium">Contact</a>
           <a href="/hostels" className="text-gray-700 hover:text-blue-700 font-medium">Hostels</a>
-          <a href="/add-hostel" className="text-gray-700 hover:text-blue-700 font-medium">Add Hostel</a>
           <a href="/client" className="text-gray-700 hover:text-blue-700 font-medium">Client Dashboard</a>
           <a href="/warden" className="text-gray-700 hover:text-blue-700 font-medium">Warden Dashboard</a>
           <a href="/admin" className="text-gray-700 hover:text-blue-700 font-medium">Admin Dashboard</a>

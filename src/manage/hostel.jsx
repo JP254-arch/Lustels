@@ -23,7 +23,8 @@ export default function ManageHostels() {
         status: "active",
         genderPolicy: "male",
         assignedWarden: "Warden A",
-        imageUrl: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aG90ZWxzfGVufDB8fDB8fHww",
+        imageUrl:
+          "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&auto=format&fit=crop&q=60",
       },
       {
         id: 2,
@@ -85,9 +86,9 @@ export default function ManageHostels() {
   if (loading) return <p className="p-6">Loading hostels...</p>;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h2 className="text-2xl font-bold">Manage Hostels</h2>
         <Button variant="success" onClick={handleAddNew}>
           ➕ Add Hostel
@@ -97,13 +98,12 @@ export default function ManageHostels() {
       {/* MOBILE VIEW */}
       <div className="grid grid-cols-1 gap-4 md:hidden">
         {hostels.map((hostel) => (
-          <div key={hostel.id} className="bg-white rounded-xl shadow">
+          <div key={hostel.id} className="bg-white rounded-xl shadow overflow-hidden">
             <img
               src={hostel.imageUrl}
               alt={hostel.name}
-              className="w-full h-40 object-cover rounded-t-xl"
+              className="w-full h-40 object-cover"
             />
-
             <div className="p-4 space-y-2">
               <div className="flex justify-between items-center">
                 <h3 className="font-bold text-lg">{hostel.name}</h3>
@@ -117,14 +117,12 @@ export default function ManageHostels() {
                   {hostel.status}
                 </span>
               </div>
-
               <p><strong>Location:</strong> {hostel.location}</p>
               <p><strong>Room Type:</strong> {hostel.roomType}</p>
               <p><strong>Total Rooms:</strong> {hostel.totalRooms}</p>
               <p><strong>Beds / Room:</strong> {hostel.bedsPerRoom}</p>
               <p><strong>Warden:</strong> {hostel.assignedWarden}</p>
-
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 flex-wrap pt-2">
                 <Button size="sm" onClick={() => handleEdit(hostel)}>Edit</Button>
                 <Button
                   size="sm"
@@ -133,11 +131,7 @@ export default function ManageHostels() {
                 >
                   {hostel.status === "active" ? "Deactivate" : "Activate"}
                 </Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={() => handleDelete(hostel.id)}
-                >
+                <Button size="sm" variant="danger" onClick={() => handleDelete(hostel.id)}>
                   Delete
                 </Button>
               </div>
@@ -148,8 +142,8 @@ export default function ManageHostels() {
 
       {/* DESKTOP VIEW */}
       <div className="hidden md:block bg-white rounded-2xl shadow overflow-x-auto">
-        <table className="min-w-full border-collapse">
-          <thead className="bg-gray-100 text-center">
+        <table className="min-w-full border-collapse text-center">
+          <thead className="bg-gray-100">
             <tr>
               <th className="border p-2">Image</th>
               <th className="border p-2">Name</th>
@@ -162,14 +156,14 @@ export default function ManageHostels() {
               <th className="border p-2">Actions</th>
             </tr>
           </thead>
-          <tbody className="text-center">
+          <tbody>
             {hostels.map((hostel) => (
               <tr key={hostel.id}>
                 <td className="border p-2">
                   <img
                     src={hostel.imageUrl}
                     alt={hostel.name}
-                    className="w-20 h-16 object-cover rounded mx-auto"
+                    className="w-20 h-16 object-cover mx-auto rounded"
                   />
                 </td>
                 <td className="border p-2">{hostel.name}</td>
@@ -180,7 +174,7 @@ export default function ManageHostels() {
                 <td className="border p-2 capitalize">{hostel.status}</td>
                 <td className="border p-2">{hostel.assignedWarden}</td>
                 <td className="border p-2">
-                  <div className="flex justify-center gap-2">
+                  <div className="flex justify-center gap-2 flex-wrap">
                     <Button size="sm" onClick={() => handleEdit(hostel)}>Edit</Button>
                     <Button
                       size="sm"
@@ -189,11 +183,7 @@ export default function ManageHostels() {
                     >
                       {hostel.status === "active" ? "Deactivate" : "Activate"}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => handleDelete(hostel.id)}
-                    >
+                    <Button size="sm" variant="danger" onClick={() => handleDelete(hostel.id)}>
                       Delete
                     </Button>
                   </div>
@@ -204,14 +194,20 @@ export default function ManageHostels() {
         </table>
       </div>
 
-      {/* Modal */}
-      <Modal show={showFormModal} onHide={() => setShowFormModal(false)} size="lg">
+      {/* SCROLLABLE MODAL */}
+      <Modal
+        show={showFormModal}
+        onHide={() => setShowFormModal(false)}
+        size="lg"
+        scrollable
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>
             {selectedHostel ? "Update Hostel" : "Add New Hostel"}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="max-h-[75vh] overflow-y-auto">
           <AddOrUpdateHostel
             hostelData={selectedHostel}
             onSubmit={handleFormSubmit}

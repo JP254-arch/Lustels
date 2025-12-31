@@ -17,10 +17,12 @@ import ClientDashboard from "./dashboards/client";
 // Forms
 import HostelForm from "./Forms/hostelform"; // Add or Update Hostel
 import WardenForm from "./Forms/Wardenform"; // Add or Update Warden
+import ResidentForm from "./Forms/residentform"; // Add or Update Resident
 
 // Management Pages
 import WardenManagement from "./manage/warden";
 import HostelManagement from "./manage/hostel";
+import ClientManagement from "./manage/clients";
 
 // Layout
 import Layout from "./layout/layout";
@@ -48,10 +50,12 @@ function App() {
           {/* Forms */}
           <Route path="/hostel-form" element={<HostelForm />} />
           <Route path="/warden-form" element={<WardenForm />} />
+          <Route path="/resident-form" element={<ResidentForm />} />
 
           {/* Management Pages */}
           <Route path="/manage-hostels" element={<HostelManagement />} />
           <Route path="/manage-wardens" element={<WardenManagement />} />
+          <Route path="/manage-clients" element={<ClientManagement />} />
         </Route>
 
         {/* Fallback */}
