@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export default function WardenForm({ wardenData = null, onSubmit }) {
+export default function WardenForm({ wardenData = null, onSubmit, hostelOptions = [] }) {
   const [warden, setWarden] = useState({
     name: "",
     email: "",
@@ -33,11 +33,12 @@ export default function WardenForm({ wardenData = null, onSubmit }) {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-md mx-auto bg-white rounded-2xl shadow p-6">
-        <h1 className="text-2xl font-bold mb-4">
+      <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
+        <h1 className="text-2xl font-bold mb-6">
           {wardenData ? "Update Warden" : "Add New Warden"}
         </h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* NAME */}
           <input
             type="text"
             name="name"
@@ -48,6 +49,8 @@ export default function WardenForm({ wardenData = null, onSubmit }) {
             required
             readOnly={!!wardenData} // name read-only on update
           />
+
+          {/* EMAIL */}
           <input
             type="email"
             name="email"
@@ -57,14 +60,23 @@ export default function WardenForm({ wardenData = null, onSubmit }) {
             className="border p-3 rounded-xl w-full"
             required
           />
-          <input
-            type="text"
+
+          {/* ASSIGNED HOSTEL */}
+          <select
             name="assignedHostel"
             value={warden.assignedHostel}
             onChange={handleChange}
-            placeholder="Assigned Hostel"
             className="border p-3 rounded-xl w-full"
-          />
+          >
+            <option value="">Select Assigned Hostel</option>
+            {hostelOptions.map((hostel) => (
+              <option key={hostel.id} value={hostel.name}>
+                {hostel.name}
+              </option>
+            ))}
+          </select>
+
+          {/* CONTACT */}
           <input
             type="text"
             name="contact"
@@ -73,7 +85,8 @@ export default function WardenForm({ wardenData = null, onSubmit }) {
             placeholder="Contact Number"
             className="border p-3 rounded-xl w-full"
           />
-          {/* New Fields */}
+
+          {/* GENDER */}
           <select
             name="gender"
             value={warden.gender}
@@ -83,21 +96,26 @@ export default function WardenForm({ wardenData = null, onSubmit }) {
           >
             <option value="">Select Gender</option>
             {genderOptions.map((g) => (
-              <option key={g} value={g.toLowerCase()}>{g}</option>
+              <option key={g} value={g.toLowerCase()}>
+                {g}
+              </option>
             ))}
           </select>
+
+          {/* DATE OF BIRTH */}
           <input
             type="date"
             name="dob"
             value={warden.dob}
             onChange={handleChange}
             className="border p-3 rounded-xl w-full"
-            placeholder="Date of Birth"
             required
           />
+
+          {/* SUBMIT */}
           <button
             type="submit"
-            className="bg-orange-900 text-white px-4 py-2 rounded-xl w-full"
+            className="bg-orange-900 text-white px-5 py-3 rounded-xl w-full hover:bg-orange-800 transition"
           >
             {wardenData ? "Update Warden" : "Add Warden"}
           </button>

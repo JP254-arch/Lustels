@@ -1,6 +1,7 @@
 import { useState } from "react";
-import WardenForm from "../Forms/Wardenform";
+import WardenForm from "../Forms/WardenForm";
 
+// Mock data for demonstration
 const mockWardens = [
   {
     id: 1,
@@ -20,6 +21,13 @@ const mockWardens = [
     gender: "female",
     dob: "1992-08-22",
   },
+];
+
+// Mock hostel options
+const mockHostels = [
+  { id: 1, name: "Green View Hostel" },
+  { id: 2, name: "Sunrise Hostel" },
+  { id: 3, name: "Blue Horizon Hostel" },
 ];
 
 export default function WardenManagement() {
@@ -52,15 +60,16 @@ export default function WardenManagement() {
         <div>
           <h1 className="text-2xl font-bold mb-6">Manage Wardens</h1>
           <button
-            className="mb-4 bg-orange-900 text-white px-4 py-2 rounded-xl"
+            className="mb-4 bg-orange-900 text-white px-4 py-2 rounded-xl hover:bg-orange-800 transition"
             onClick={() => setShowForm(true)}
           >
             ➕ Add Warden
           </button>
+
           <div className="overflow-x-auto bg-white p-4 rounded-2xl shadow">
             <table className="min-w-full table-auto border border-gray-200">
               <thead className="bg-gray-100">
-                <tr>
+                <tr className="text-center">
                   <th className="border p-2">Name</th>
                   <th className="border p-2">Email</th>
                   <th className="border p-2">Assigned Hostel</th>
@@ -81,7 +90,7 @@ export default function WardenManagement() {
                     <td className="border p-2">{warden.dob}</td>
                     <td className="border p-2">
                       <button
-                        className="bg-blue-600 text-white px-3 py-1 rounded-xl"
+                        className="bg-blue-600 text-white px-3 py-1 rounded-xl hover:bg-blue-500 transition"
                         onClick={() => handleEdit(warden)}
                       >
                         Edit
@@ -94,7 +103,11 @@ export default function WardenManagement() {
           </div>
         </div>
       ) : (
-        <WardenForm wardenData={editingWarden} onSubmit={handleFormSubmit} />
+        <WardenForm
+          wardenData={editingWarden}
+          onSubmit={handleFormSubmit}
+          hostelOptions={mockHostels}
+        />
       )}
     </div>
   );
