@@ -1,18 +1,16 @@
-// =============================
-// HostelDetails.jsx (Unified & Complete Details Page)
-// =============================
 import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
-import PaymentModal from "../components/PaymentModal";
+import BookingModal from "../components/PaymentModal"; // Updated to BookingModal
 
-// TEMP MOCK DATA (same structure as Hostels & Admin pages)
+// ================= MOCK HOSTELS =================
 const hostels = [
   {
     id: 1,
     name: "Green View Hostel",
     location: "Nairobi",
     address: "123 Nairobi Street",
-    description: "Spacious rooms, WiFi, security, and meals included. Quiet environment ideal for students.",
+    description:
+      "Spacious rooms, WiFi, security, and meals included. Quiet environment ideal for students.",
     price: 12000,
     roomType: "single",
     totalRooms: 10,
@@ -29,7 +27,8 @@ const hostels = [
     name: "Sunrise Hostel",
     location: "Kisumu",
     address: "456 Kisumu Road",
-    description: "Affordable shared rooms with 24/7 water and electricity. Friendly management.",
+    description:
+      "Affordable shared rooms with 24/7 water and electricity. Friendly management.",
     price: 10000,
     roomType: "shared",
     totalRooms: 8,
@@ -46,7 +45,7 @@ const hostels = [
 export default function HostelDetails() {
   const { id } = useParams();
   const hostel = hostels.find((h) => h.id === Number(id));
-  const [openPayment, setOpenPayment] = useState(false);
+  const [openBooking, setOpenBooking] = useState(false);
 
   if (!hostel) {
     return (
@@ -58,17 +57,23 @@ export default function HostelDetails() {
 
   const totalBeds = hostel.totalRooms * hostel.bedsPerRoom;
 
+  // Handle confirmed booking from modal
+  const handleBookingConfirm = (bookingData) => {
+    console.log("Booking Confirmed:", bookingData);
+    // TODO: Save bookingData to your DB or API after payment success
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow overflow-hidden">
-        {/* Image */}
+        {/* Hostel Image */}
         <img
           src={hostel.imageUrl}
           alt={hostel.name}
           className="w-full h-72 object-cover"
         />
 
-        {/* Content */}
+        {/* Hostel Info */}
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
@@ -77,7 +82,6 @@ export default function HostelDetails() {
               <p className="text-gray-600">{hostel.location}</p>
               <p className="text-sm text-gray-500">{hostel.address}</p>
             </div>
-
             <div className="text-left md:text-right">
               <p className="text-2xl font-bold">KES {hostel.price}</p>
               <p className="text-sm text-gray-500">per month</p>
@@ -90,7 +94,7 @@ export default function HostelDetails() {
             <p className="text-gray-700">{hostel.description}</p>
           </div>
 
-          {/* Details Grid */}
+          {/* Hostel Details Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
             <div className="bg-gray-50 p-4 rounded-xl">
               <strong>Room Type</strong>
@@ -133,7 +137,7 @@ export default function HostelDetails() {
             </div>
           </div>
 
-          {/* Warden */}
+          {/* Assigned Warden */}
           <div className="text-sm text-gray-600">
             <strong>Assigned Warden:</strong> {hostel.assignedWarden}
           </div>
@@ -141,12 +145,11 @@ export default function HostelDetails() {
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
-              onClick={() => setOpenPayment(true)}
+              onClick={() => setOpenBooking(true)}
               className="bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition"
             >
               Book / Reserve
             </button>
-
             <Link
               to="/hostels"
               className="border border-gray-300 px-6 py-3 rounded-xl text-center hover:bg-gray-50 transition"
@@ -157,12 +160,14 @@ export default function HostelDetails() {
         </div>
       </div>
 
-      {/* Payment Modal */}
-      <PaymentModal
-        open={openPayment}
-        onClose={() => setOpenPayment(false)}
-        hostel={hostel}
-      />
+      {/* Booking Modal */}
+      {openBooking && (
+        <BookingModal
+          hostel={hostel}
+          onClose={() => setOpenBooking(false)}
+          onConfirm={handleBookingConfirm}
+        />
+      )}
     </div>
   );
 }

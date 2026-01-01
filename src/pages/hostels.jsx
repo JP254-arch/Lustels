@@ -1,6 +1,3 @@
-// =============================
-// Hostels.jsx (Unified & Clean Public Listing)
-// =============================
 import { Link } from "react-router-dom";
 
 // TEMP MOCK DATA (will be replaced by API / MongoDB)
@@ -78,7 +75,6 @@ export default function Hostels() {
                 </div>
 
                 <p className="text-gray-600 text-sm">{hostel.location}</p>
-
                 <p className="text-sm text-gray-500 capitalize">
                   {hostel.roomType} room · {hostel.totalRooms} rooms
                 </p>
