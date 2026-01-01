@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
-  const [formData, setFormData] = useState({
+  const initialState = {
     name: "",
     location: "",
     address: "",
@@ -14,20 +14,26 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     status: "active",
     genderPolicy: "",
     assignedWarden: "",
-    totalBeds: "",
     imageUrl: "",
-    imageFile: null,
-  });
+  };
 
-  const amenitiesList = ["WiFi", "Water", "Electricity", "Security", "Meals", "Parking", "Study Room"];
-  const genderOptions = ["Male", "Female", "Mixed"];
-  const statusOptions = ["Active", "Inactive"];
-  const wardens = ["Warden A", "Warden B", "Warden C"]; // example
+  const [formData, setFormData] = useState(initialState);
 
-  // Pre-fill form if updating
+  const amenitiesList = [
+    "WiFi",
+    "Water",
+    "Electricity",
+    "Security",
+    "Meals",
+    "Parking",
+    "Study Room",
+  ];
+
+  const wardens = ["Warden A", "Warden B", "Warden C"];
+
   useEffect(() => {
     if (hostelData) {
-      setFormData({ ...formData, ...hostelData });
+      setFormData({ ...initialState, ...hostelData });
     }
   }, [hostelData]);
 
@@ -44,35 +50,43 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     }));
   };
 
-  const handleFileChange = (e) => {
-    setFormData({ ...formData, imageFile: e.target.files[0] });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    const totalBeds = formData.totalRooms * formData.bedsPerRoom;
-    const dataToSubmit = { ...formData, totalBeds };
-    if (onSubmit) onSubmit(dataToSubmit);
-    alert(`Hostel ${hostelData ? "updated" : "added"} successfully (mock)`);
+
+    const payload = {
+      ...formData,
+      price: Number(formData.price),
+      totalRooms: Number(formData.totalRooms),
+      bedsPerRoom: Number(formData.bedsPerRoom),
+      totalBeds: Number(formData.totalRooms) * Number(formData.bedsPerRoom),
+    };
+
+    onSubmit(payload);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow p-6">
-        <h1 className="text-2xl font-bold mb-6">
-          {hostelData ? "Update Hostel" : "Add New Hostel"}
-        </h1>
+    <div className="bg-gray-100 p-6">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 space-y-8">
+        {/* HEADER */}
+        <div className="border-b pb-4">
+          <h1 className="text-2xl font-bold">
+            {hostelData ? "Update Hostel" : "Add New Hostel"}
+          </h1>
+          <p className="text-sm text-gray-500">
+            Fill in accurate hostel details for students and administrators
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* BASIC INFO */}
-          <div>
-            <h2 className="font-semibold mb-3">Basic Information</h2>
+          <section>
+            <h2 className="font-semibold mb-4 text-lg">Basic Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
                 type="text"
                 name="name"
                 placeholder="Hostel Name"
-                className="border p-3 rounded-xl"
+                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
                 value={formData.name}
                 onChange={handleChange}
                 required
@@ -80,8 +94,8 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
               <input
                 type="text"
                 name="location"
-                placeholder="Location (City / Area)"
-                className="border p-3 rounded-xl"
+                placeholder="City / Area"
+                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
                 value={formData.location}
                 onChange={handleChange}
                 required
@@ -90,43 +104,44 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 type="text"
                 name="address"
                 placeholder="Full Address"
-                className="border p-3 rounded-xl md:col-span-2"
+                className="border p-3 rounded-xl md:col-span-2 focus:ring-2 focus:ring-orange-900 outline-none"
                 value={formData.address}
                 onChange={handleChange}
               />
             </div>
-          </div>
+          </section>
 
           {/* DESCRIPTION */}
-          <div>
-            <h2 className="font-semibold mb-3">Description</h2>
+          <section>
+            <h2 className="font-semibold mb-4 text-lg">Description</h2>
             <textarea
               name="description"
-              placeholder="Hostel description, rules, notes"
-              className="border p-3 rounded-xl w-full"
               rows={4}
+              placeholder="Describe the hostel, rules, and important notes"
+              className="border p-3 rounded-xl w-full focus:ring-2 focus:ring-orange-900 outline-none"
               value={formData.description}
               onChange={handleChange}
               required
             />
-          </div>
+          </section>
 
           {/* PRICING & CAPACITY */}
-          <div>
-            <h2 className="font-semibold mb-3">Pricing & Capacity</h2>
+          <section>
+            <h2 className="font-semibold mb-4 text-lg">Pricing & Capacity</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
                 type="number"
                 name="price"
-                placeholder="Price per Month (KES)"
-                className="border p-3 rounded-xl"
+                placeholder="Monthly Price (KES)"
+                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
                 value={formData.price}
                 onChange={handleChange}
                 required
               />
+
               <select
                 name="roomType"
-                className="border p-3 rounded-xl"
+                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
                 value={formData.roomType}
                 onChange={handleChange}
                 required
@@ -134,35 +149,49 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 <option value="">Select Room Type</option>
                 <option value="single">Single</option>
                 <option value="double">Double</option>
-                <option value="shared">Dormitory / Shared</option>
+                <option value="shared">Shared / Dormitory</option>
               </select>
+
               <input
                 type="number"
                 name="totalRooms"
                 placeholder="Total Rooms"
-                className="border p-3 rounded-xl"
+                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
                 value={formData.totalRooms}
                 onChange={handleChange}
                 required
               />
+
               <input
                 type="number"
                 name="bedsPerRoom"
-                placeholder="Beds per Room"
-                className="border p-3 rounded-xl"
+                placeholder="Beds Per Room"
+                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
                 value={formData.bedsPerRoom}
                 onChange={handleChange}
                 required
               />
             </div>
-          </div>
+
+            {formData.totalRooms && formData.bedsPerRoom && (
+              <p className="mt-3 text-sm text-gray-600">
+                Total Beds:{" "}
+                <span className="font-semibold">
+                  {formData.totalRooms * formData.bedsPerRoom}
+                </span>
+              </p>
+            )}
+          </section>
 
           {/* AMENITIES */}
-          <div>
-            <h2 className="font-semibold mb-3">Amenities</h2>
+          <section>
+            <h2 className="font-semibold mb-4 text-lg">Amenities</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {amenitiesList.map((amenity) => (
-                <label key={amenity} className="flex items-center gap-2">
+                <label
+                  key={amenity}
+                  className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer hover:bg-gray-50"
+                >
                   <input
                     type="checkbox"
                     checked={formData.amenities.includes(amenity)}
@@ -172,86 +201,68 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 </label>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* ADDITIONAL OPTIONS */}
-          <div>
-            <h2 className="font-semibold mb-3">Additional Options</h2>
+          {/* POLICIES */}
+          <section>
+            <h2 className="font-semibold mb-4 text-lg">Policies & Management</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <select
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                className="border p-3 rounded-xl"
+                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
               >
-                {statusOptions.map((status) => (
-                  <option key={status} value={status.toLowerCase()}>
-                    {status}
-                  </option>
-                ))}
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
               </select>
+
               <select
                 name="genderPolicy"
                 value={formData.genderPolicy}
                 onChange={handleChange}
-                className="border p-3 rounded-xl"
+                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
               >
-                <option value="">Select Gender Policy</option>
-                {genderOptions.map((gender) => (
-                  <option key={gender} value={gender.toLowerCase()}>
-                    {gender}
-                  </option>
-                ))}
+                <option value="">Gender Policy</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="mixed">Mixed</option>
               </select>
 
-              {/* Assigned Warden */}
               <select
                 name="assignedWarden"
                 value={formData.assignedWarden}
                 onChange={handleChange}
-                className="border p-3 rounded-xl md:col-span-2"
+                className="border p-3 rounded-xl md:col-span-2 focus:ring-2 focus:ring-orange-900 outline-none"
               >
-                <option value="">Select Assigned Warden</option>
+                <option value="">Assign Warden</option>
                 {wardens.map((warden) => (
                   <option key={warden} value={warden}>
                     {warden}
                   </option>
                 ))}
               </select>
-
-              <input
-                type="number"
-                name="totalBeds"
-                placeholder="Total Beds (auto-calculated)"
-                className="border p-3 rounded-xl md:col-span-2"
-                value={formData.totalRooms && formData.bedsPerRoom ? formData.totalRooms * formData.bedsPerRoom : ''}
-                readOnly
-              />
-
-              {/* Image inputs */}
-              <input
-                type="url"
-                name="imageUrl"
-                placeholder="Hostel Image URL"
-                className="border p-3 rounded-xl md:col-span-2"
-                value={formData.imageUrl}
-                onChange={handleChange}
-              />
-              <input
-                type="file"
-                name="imageFile"
-                accept="image/*"
-                className="border p-3 rounded-xl md:col-span-2"
-                onChange={handleFileChange}
-              />
             </div>
-          </div>
+          </section>
+
+          {/* IMAGE */}
+          <section>
+            <h2 className="font-semibold mb-4 text-lg">Hostel Image</h2>
+            <input
+              type="url"
+              name="imageUrl"
+              placeholder="Image URL"
+              className="border p-3 rounded-xl w-full focus:ring-2 focus:ring-orange-900 outline-none"
+              value={formData.imageUrl}
+              onChange={handleChange}
+            />
+          </section>
 
           {/* SUBMIT */}
           <div className="pt-4">
             <button
               type="submit"
-              className="bg-orange-900 text-white px-6 py-3 rounded-xl hover:bg-orange-800 transition w-full"
+              className="bg-orange-900 text-white py-3 rounded-xl w-full hover:bg-orange-800 transition font-semibold"
             >
               {hostelData ? "Update Hostel" : "Add Hostel"}
             </button>
