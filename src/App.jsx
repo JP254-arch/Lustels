@@ -22,7 +22,7 @@ import ResidentForm from "./Forms/residentform"; // Add or Update Resident
 // Management Pages
 import WardenManagement from "./manage/warden";
 import HostelManagement from "./manage/hostel";
-import ClientManagement from "./manage/clients";
+import ClientManagement from "./manage/residents";
 
 // Layout
 import Layout from "./layout/layout";

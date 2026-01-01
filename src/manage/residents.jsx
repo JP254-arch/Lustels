@@ -4,15 +4,15 @@ import ResidentForm from "../Forms/residentform";
 const mockResidents = [
   {
     id: 1,
-    name: "John Doe",
+    fullName: "John Doe",
     gender: "Male",
     hostel: "Green View Hostel",
     roomType: "Single",
     checkIn: "2026-01-01",
     checkOut: "2026-03-01",
     monthlyRent: 12000,
+    deposit: 2000,
     amountPaid: 18000,
-    loan: 5000,
     status: "active",
     photo: "https://via.placeholder.com/100",
   },
@@ -23,23 +23,27 @@ export default function ManageResidents() {
   const [editingResident, setEditingResident] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
-  const calculateBalance = (r) => {
+  // ---------------- CALCULATIONS ----------------
+  const calculateMonths = (r) => {
+    if (!r.checkIn || !r.checkOut) return 0;
     const start = new Date(r.checkIn);
     const end = new Date(r.checkOut);
-    const months =
-      (end.getFullYear() - start.getFullYear()) * 12 +
-      (end.getMonth() - start.getMonth()) +
-      1;
-    return months * r.monthlyRent - r.amountPaid;
+    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+    return months > 0 ? months : 0;
   };
 
+  const calculateAmount = (r) => calculateMonths(r) * Number(r.monthlyRent || 0);
+  const calculatePaid = (r) => Number(r.amountPaid || 0) + Number(r.deposit || 0);
+  const calculateBalance = (r) => calculateAmount(r) - calculatePaid(r);
+
+  // ---------------- HANDLE SAVE ----------------
   const handleSave = (resident) => {
     if (editingResident) {
-      setResidents((prev) =>
-        prev.map((r) => (r.id === editingResident.id ? { ...r, ...resident } : r))
+      setResidents(prev =>
+        prev.map(r => r.id === editingResident.id ? { ...r, ...resident } : r)
       );
     } else {
-      setResidents((prev) => [...prev, { ...resident, id: prev.length + 1 }]);
+      setResidents(prev => [...prev, { ...resident, id: prev.length + 1 }]);
     }
     setShowForm(false);
     setEditingResident(null);
@@ -67,29 +71,32 @@ export default function ManageResidents() {
                   <th className="p-2">Name</th>
                   <th className="p-2">Hostel</th>
                   <th className="p-2">Room</th>
+                  <th className="p-2">Amount</th>
                   <th className="p-2">Paid</th>
                   <th className="p-2">Balance</th>
-                  <th className="p-2">Loan</th>
                   <th className="p-2">Status</th>
                   <th className="p-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {residents.map((r) => {
+                {residents.map(r => {
+                  const amount = calculateAmount(r);
+                  const paid = calculatePaid(r);
                   const balance = calculateBalance(r);
+
                   return (
                     <tr key={r.id} className="text-center border-t">
                       <td className="p-2">
                         <img src={r.photo} alt="" className="w-12 h-12 rounded-full mx-auto" />
                       </td>
-                      <td className="p-2">{r.name}</td>
+                      <td className="p-2">{r.fullName}</td>
                       <td className="p-2">{r.hostel}</td>
                       <td className="p-2">{r.roomType}</td>
-                      <td className="p-2">KES {r.amountPaid.toLocaleString()}</td>
+                      <td className="p-2">KES {amount.toLocaleString()}</td>
+                      <td className="p-2">KES {paid.toLocaleString()}</td>
                       <td className={`p-2 font-semibold ${balance > 0 ? "text-red-600" : "text-green-600"}`}>
                         KES {balance.toLocaleString()}
                       </td>
-                      <td className="p-2">KES {r.loan.toLocaleString()}</td>
                       <td className="p-2">
                         <span className={`px-3 py-1 rounded-full text-white text-sm ${r.status === "active" ? "bg-green-500" : "bg-gray-500"}`}>
                           {r.status}
@@ -97,10 +104,7 @@ export default function ManageResidents() {
                       </td>
                       <td className="p-2">
                         <button
-                          onClick={() => {
-                            setEditingResident(r);
-                            setShowForm(true);
-                          }}
+                          onClick={() => { setEditingResident(r); setShowForm(true); }}
                           className="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700"
                         >
                           Edit
@@ -117,10 +121,7 @@ export default function ManageResidents() {
         <ResidentForm
           residentData={editingResident}
           onSubmit={handleSave}
-          onCancel={() => {
-            setShowForm(false);
-            setEditingResident(null);
-          }}
+          onCancel={() => { setShowForm(false); setEditingResident(null); }}
         />
       )}
     </div>
