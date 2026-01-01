@@ -1,44 +1,65 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-// TEMP MOCK DATA (will be replaced by API / MongoDB)
-const hostels = [
-  {
-    id: 1,
-    name: "Green View Hostel",
-    location: "Nairobi",
-    address: "123 Nairobi Street",
-    description: "Spacious rooms, WiFi, security, and meals included.",
-    price: 12000,
-    roomType: "single",
-    totalRooms: 10,
-    bedsPerRoom: 2,
-    amenities: ["WiFi", "Water", "Security", "Meals"],
-    status: "active",
-    genderPolicy: "male",
-    assignedWarden: "Warden A",
-    imageUrl:
-      "https://images.unsplash.com/photo-1633411187642-f84216917af1?w=800&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 2,
-    name: "Sunrise Hostel",
-    location: "Kisumu",
-    address: "456 Kisumu Road",
-    description: "Affordable rooms with 24/7 water and electricity.",
-    price: 10000,
-    roomType: "shared",
-    totalRooms: 8,
-    bedsPerRoom: 4,
-    amenities: ["Water", "Electricity", "Meals"],
-    status: "active",
-    genderPolicy: "female",
-    assignedWarden: "Warden B",
-    imageUrl:
-      "https://plus.unsplash.com/premium_photo-1676321688630-9558e7d2be10?w=800&auto=format&fit=crop&q=60",
-  },
-];
+import axios from "axios";
 
 export default function Hostels() {
+  const [hostels, setHostels] = useState([]);
+  const [wardens, setWardens] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch hostels
+        const hostelsRes = await axios.get("http://localhost:4000/api/hostels");
+
+        // Fetch wardens
+        const wardensRes = await axios.get("http://localhost:4000/api/wardens");
+
+        setHostels(hostelsRes.data);
+        setWardens(wardensRes.data);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch hostels or wardens.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Helper to get warden name by ID or name field
+  const getWardenName = (assignedWarden) => {
+    if (!assignedWarden) return "Unassigned";
+
+    // If the assignedWarden is a string, return it directly
+    if (typeof assignedWarden === "string") return assignedWarden;
+
+    // If it's an ID, find the warden
+    const w = wardens.find((w) => w._id === assignedWarden);
+    return w ? w.name : "Unknown";
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Loading hostels...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       {/* Header */}
@@ -55,12 +76,12 @@ export default function Hostels() {
           .filter((hostel) => hostel.status === "active")
           .map((hostel) => (
             <div
-              key={hostel.id}
+              key={hostel._id}
               className="bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden"
             >
               {/* Image */}
               <img
-                src={hostel.imageUrl}
+                src={hostel.imageUrl || "https://via.placeholder.com/400x200"}
                 alt={hostel.name}
                 className="w-full h-48 object-cover"
               />
@@ -79,17 +100,20 @@ export default function Hostels() {
                   {hostel.roomType} room · {hostel.totalRooms} rooms
                 </p>
 
+                {/* Assigned Warden */}
+                <p className="text-sm text-gray-500">
+                  Warden:{" "}
+                  <span className="font-medium">{getWardenName(hostel.assignedWarden)}</span>
+                </p>
+
                 {/* Amenities Preview */}
                 <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                  {hostel.amenities.slice(0, 3).map((amenity) => (
-                    <span
-                      key={amenity}
-                      className="bg-gray-100 px-2 py-1 rounded"
-                    >
+                  {hostel.amenities?.slice(0, 3).map((amenity) => (
+                    <span key={amenity} className="bg-gray-100 px-2 py-1 rounded">
                       {amenity}
                     </span>
                   ))}
-                  {hostel.amenities.length > 3 && (
+                  {hostel.amenities?.length > 3 && (
                     <span className="text-gray-400">
                       +{hostel.amenities.length - 3} more
                     </span>
@@ -99,14 +123,12 @@ export default function Hostels() {
                 {/* Price */}
                 <p className="text-lg font-bold pt-2">
                   KES {hostel.price}
-                  <span className="text-sm font-normal text-gray-500">
-                    / month
-                  </span>
+                  <span className="text-sm font-normal text-gray-500">/ month</span>
                 </p>
 
                 {/* Action */}
                 <Link
-                  to={`/hostels/${hostel.id}`}
+                  to={`/hostels/${hostel._id}`}
                   className="block text-center bg-black text-white py-2 rounded-xl hover:bg-gray-800 transition"
                 >
                   View Details

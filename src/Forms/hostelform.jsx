@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
   const initialState = {
@@ -18,6 +19,12 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
   };
 
   const [formData, setFormData] = useState(initialState);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(""); // For success message
+  const [wardens, setWardens] = useState([]);
+  const [wardensLoading, setWardensLoading] = useState(true);
+  const [wardensError, setWardensError] = useState("");
 
   const amenitiesList = [
     "WiFi",
@@ -29,8 +36,24 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     "Study Room",
   ];
 
-  const wardens = ["Warden A", "Warden B", "Warden C"];
+  // Fetch wardens
+  useEffect(() => {
+    const fetchWardens = async () => {
+      try {
+        setWardensLoading(true);
+        const res = await axios.get("http://localhost:4000/api/wardens");
+        setWardens(res.data);
+      } catch (err) {
+        console.error(err);
+        setWardensError("Failed to fetch wardens");
+      } finally {
+        setWardensLoading(false);
+      }
+    };
+    fetchWardens();
+  }, []);
 
+  // Populate form if editing
   useEffect(() => {
     if (hostelData) {
       setFormData({ ...initialState, ...hostelData });
@@ -50,8 +73,11 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
 
     const payload = {
       ...formData,
@@ -61,12 +87,40 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
       totalBeds: Number(formData.totalRooms) * Number(formData.bedsPerRoom),
     };
 
-    onSubmit(payload);
+    try {
+      let res;
+      if (hostelData?._id) {
+        res = await axios.put(
+          `http://localhost:4000/api/hostels/${hostelData._id}`,
+          payload
+        );
+      } else {
+        res = await axios.post("http://localhost:4000/api/hostels", payload);
+      }
+
+      // Clear error and show success
+      setError("");
+      setSuccess(hostelData ? "Hostel updated successfully!" : "Hostel added successfully!");
+
+      // Call parent callback
+      if (onSubmit) onSubmit(res.data);
+
+      // Reset form if adding new
+      if (!hostelData) setFormData(initialState);
+
+      // Hide success after 3 seconds
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save hostel. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="bg-gray-100 p-6">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 space-y-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 space-y-6">
         {/* HEADER */}
         <div className="border-b pb-4">
           <h1 className="text-2xl font-bold">
@@ -76,6 +130,9 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
             Fill in accurate hostel details for students and administrators
           </p>
         </div>
+
+        {error && <p className="text-red-500">{error}</p>}
+        {success && <p className="text-green-500">{success}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* BASIC INFO */}
@@ -138,7 +195,6 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 onChange={handleChange}
                 required
               />
-
               <select
                 name="roomType"
                 className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
@@ -151,7 +207,6 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 <option value="double">Double</option>
                 <option value="shared">Shared / Dormitory</option>
               </select>
-
               <input
                 type="number"
                 name="totalRooms"
@@ -161,7 +216,6 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 onChange={handleChange}
                 required
               />
-
               <input
                 type="number"
                 name="bedsPerRoom"
@@ -172,7 +226,6 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 required
               />
             </div>
-
             {formData.totalRooms && formData.bedsPerRoom && (
               <p className="mt-3 text-sm text-gray-600">
                 Total Beds:{" "}
@@ -203,7 +256,7 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
             </div>
           </section>
 
-          {/* POLICIES */}
+          {/* POLICIES & MANAGEMENT */}
           <section>
             <h2 className="font-semibold mb-4 text-lg">Policies & Management</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -216,7 +269,6 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
-
               <select
                 name="genderPolicy"
                 value={formData.genderPolicy}
@@ -229,16 +281,24 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 <option value="mixed">Mixed</option>
               </select>
 
+              {/* Wardens */}
               <select
                 name="assignedWarden"
                 value={formData.assignedWarden}
                 onChange={handleChange}
                 className="border p-3 rounded-xl md:col-span-2 focus:ring-2 focus:ring-orange-900 outline-none"
+                disabled={wardensLoading || !!wardensError}
               >
-                <option value="">Assign Warden</option>
+                <option value="">
+                  {wardensLoading
+                    ? "Loading wardens..."
+                    : wardensError
+                    ? "Failed to load wardens"
+                    : "Assign Warden"}
+                </option>
                 {wardens.map((warden) => (
-                  <option key={warden} value={warden}>
-                    {warden}
+                  <option key={warden._id} value={warden.name}>
+                    {warden.name}
                   </option>
                 ))}
               </select>
@@ -262,9 +322,16 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
           <div className="pt-4">
             <button
               type="submit"
-              className="bg-orange-900 text-white py-3 rounded-xl w-full hover:bg-orange-800 transition font-semibold"
+              disabled={loading}
+              className="bg-orange-900 text-white py-3 rounded-xl w-full hover:bg-orange-800 transition font-semibold disabled:opacity-50"
             >
-              {hostelData ? "Update Hostel" : "Add Hostel"}
+              {loading
+                ? hostelData
+                  ? "Updating..."
+                  : "Adding..."
+                : hostelData
+                ? "Update Hostel"
+                : "Add Hostel"}
             </button>
           </div>
         </form>

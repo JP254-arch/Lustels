@@ -1,47 +1,7 @@
-// =============================
-// ManageHostels.jsx (Admin – Fully Aligned)
-// =============================
 import { useState, useEffect } from "react";
 import { Button, Modal } from "react-bootstrap";
+import axios from "axios";
 import AddOrUpdateHostel from "../Forms/hostelform";
-
-// TEMP MOCK DATA (same structure as public pages)
-const initialHostels = [
-  {
-    id: 1,
-    name: "Green View Hostel",
-    location: "Nairobi",
-    address: "123 Nairobi Street",
-    description: "Spacious rooms, WiFi, security, and meals included.",
-    price: 12000,
-    roomType: "single",
-    totalRooms: 10,
-    bedsPerRoom: 2,
-    amenities: ["WiFi", "Water", "Security", "Meals"],
-    status: "active",
-    genderPolicy: "male",
-    assignedWarden: "Warden A",
-    imageUrl:
-      "https://images.unsplash.com/photo-1633411187642-f84216917af1?w=800&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 2,
-    name: "Sunrise Hostel",
-    location: "Kisumu",
-    address: "456 Kisumu Road",
-    description: "Affordable rooms with 24/7 water and electricity.",
-    price: 10000,
-    roomType: "shared",
-    totalRooms: 8,
-    bedsPerRoom: 4,
-    amenities: ["Water", "Electricity", "Meals"],
-    status: "inactive",
-    genderPolicy: "female",
-    assignedWarden: "Warden B",
-    imageUrl:
-      "https://plus.unsplash.com/premium_photo-1676321688630-9558e7d2be10?w=800&auto=format&fit=crop&q=60",
-  },
-];
 
 export default function ManageHostels() {
   const [hostels, setHostels] = useState([]);
@@ -49,10 +9,19 @@ export default function ManageHostels() {
   const [showModal, setShowModal] = useState(false);
   const [selectedHostel, setSelectedHostel] = useState(null);
 
+  // Fetch hostels from backend
   useEffect(() => {
-    // Replace with API call later
-    setHostels(initialHostels);
-    setLoading(false);
+    const fetchHostels = async () => {
+      try {
+        const res = await axios.get("http://localhost:4000/api/hostels");
+        setHostels(res.data);
+      } catch (err) {
+        console.error("Failed to fetch hostels:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHostels();
   }, []);
 
   const handleAdd = () => {
@@ -65,30 +34,53 @@ export default function ManageHostels() {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!window.confirm("Delete this hostel permanently?")) return;
-    setHostels((prev) => prev.filter((h) => h.id !== id));
-  };
-
-  const handleToggleStatus = (id) => {
-    setHostels((prev) =>
-      prev.map((h) =>
-        h.id === id
-          ? { ...h, status: h.status === "active" ? "inactive" : "active" }
-          : h
-      )
-    );
-  };
-
-  const handleFormSubmit = (data) => {
-    if (selectedHostel) {
-      setHostels((prev) =>
-        prev.map((h) => (h.id === selectedHostel.id ? { ...h, ...data } : h))
-      );
-    } else {
-      setHostels((prev) => [...prev, { ...data, id: Date.now() }]);
+    try {
+      await axios.delete(`http://localhost:4000/api/hostels/${id}`);
+      setHostels((prev) => prev.filter((h) => h._id !== id));
+    } catch (err) {
+      console.error("Failed to delete hostel:", err);
     }
-    setShowModal(false);
+  };
+
+  const handleToggleStatus = async (id) => {
+    const hostel = hostels.find((h) => h._id === id);
+    if (!hostel) return;
+    const updatedStatus = hostel.status === "active" ? "inactive" : "active";
+
+    try {
+      const res = await axios.patch(`http://localhost:4000/api/hostels/${id}`, {
+        status: updatedStatus,
+      });
+      setHostels((prev) =>
+        prev.map((h) => (h._id === id ? { ...h, status: res.data.status } : h))
+      );
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
+  };
+
+  const handleFormSubmit = async (data) => {
+    try {
+      if (selectedHostel) {
+        // Update existing hostel
+        const res = await axios.put(
+          `http://localhost:4000/api/hostels/${selectedHostel._id}`,
+          data
+        );
+        setHostels((prev) =>
+          prev.map((h) => (h._id === selectedHostel._id ? res.data : h))
+        );
+      } else {
+        // Add new hostel
+        const res = await axios.post("http://localhost:4000/api/hostels", data);
+        setHostels((prev) => [...prev, res.data]);
+      }
+      setShowModal(false);
+    } catch (err) {
+      console.error("Failed to save hostel:", err);
+    }
   };
 
   if (loading) return <p className="p-6">Loading hostels...</p>;
@@ -122,7 +114,7 @@ export default function ManageHostels() {
           </thead>
           <tbody>
             {hostels.map((hostel) => (
-              <tr key={hostel.id}>
+              <tr key={hostel._id}>
                 <td className="border p-2">
                   <img
                     src={hostel.imageUrl}
@@ -146,14 +138,14 @@ export default function ManageHostels() {
                     <Button
                       size="sm"
                       variant={hostel.status === "active" ? "warning" : "success"}
-                      onClick={() => handleToggleStatus(hostel.id)}
+                      onClick={() => handleToggleStatus(hostel._id)}
                     >
                       {hostel.status === "active" ? "Deactivate" : "Activate"}
                     </Button>
                     <Button
                       size="sm"
                       variant="danger"
-                      onClick={() => handleDelete(hostel.id)}
+                      onClick={() => handleDelete(hostel._id)}
                     >
                       Delete
                     </Button>
@@ -174,15 +166,10 @@ export default function ManageHostels() {
         scrollable
       >
         <Modal.Header closeButton>
-          <Modal.Title>
-            {selectedHostel ? "Update Hostel" : "Add Hostel"}
-          </Modal.Title>
+          <Modal.Title>{selectedHostel ? "Update Hostel" : "Add Hostel"}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <AddOrUpdateHostel
-            hostelData={selectedHostel}
-            onSubmit={handleFormSubmit}
-          />
+          <AddOrUpdateHostel hostelData={selectedHostel} onSubmit={handleFormSubmit} />
         </Modal.Body>
       </Modal>
     </div>

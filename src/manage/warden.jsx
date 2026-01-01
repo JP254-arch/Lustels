@@ -1,58 +1,89 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import WardenForm from "../Forms/WardenForm";
 
-// Mock data for demonstration
-const mockWardens = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    assignedHostel: "Green View Hostel",
-    contact: "0712345678",
-    gender: "male",
-    dob: "1990-05-15",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane@example.com",
-    assignedHostel: "Sunrise Hostel",
-    contact: "0723456789",
-    gender: "female",
-    dob: "1992-08-22",
-  },
-];
-
-// Mock hostel options
-const mockHostels = [
-  { id: 1, name: "Green View Hostel" },
-  { id: 2, name: "Sunrise Hostel" },
-  { id: 3, name: "Blue Horizon Hostel" },
-];
-
 export default function WardenManagement() {
-  const [wardens, setWardens] = useState(mockWardens);
+  const [wardens, setWardens] = useState([]);
+  const [hostels, setHostels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [editingWarden, setEditingWarden] = useState(null);
   const [showForm, setShowForm] = useState(false);
+
+  // Fetch wardens & hostels
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [wardensRes, hostelsRes] = await Promise.all([
+          axios.get("http://localhost:4000/api/wardens"),
+          axios.get("http://localhost:4000/api/hostels")
+        ]);
+        setWardens(wardensRes.data);
+        setHostels(hostelsRes.data.filter(h => h.status === "active")); // Only active hostels
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleEdit = (warden) => {
     setEditingWarden(warden);
     setShowForm(true);
   };
 
-  const handleFormSubmit = (updatedWarden) => {
-    if (editingWarden) {
-      // Update existing warden
-      setWardens((prev) =>
-        prev.map((w) => (w.id === editingWarden.id ? { ...w, ...updatedWarden } : w))
-      );
-    } else {
-      // Add new warden
-      setWardens((prev) => [...prev, { ...updatedWarden, id: prev.length + 1 }]);
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this warden permanently?")) return;
+    try {
+      await axios.delete(`http://localhost:4000/api/wardens/${id}`);
+      setWardens(prev => prev.filter(w => w._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete warden.");
     }
-    setShowForm(false);
-    setEditingWarden(null);
   };
+
+  const handleFormSubmit = async (wardenData) => {
+    try {
+      if (editingWarden) {
+        const res = await axios.put(
+          `http://localhost:4000/api/wardens/${editingWarden._id}`,
+          wardenData
+        );
+        setWardens(prev =>
+          prev.map(w => (w._id === editingWarden._id ? res.data : w))
+        );
+      } else {
+        const res = await axios.post(
+          "http://localhost:4000/api/wardens",
+          wardenData
+        );
+        setWardens(prev => [...prev, res.data]);
+      }
+      setShowForm(false);
+      setEditingWarden(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save warden.");
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Loading wardens and hostels...</p>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -75,25 +106,33 @@ export default function WardenManagement() {
                   <th className="border p-2">Assigned Hostel</th>
                   <th className="border p-2">Contact</th>
                   <th className="border p-2">Gender</th>
-                  <th className="border p-2">Date of Birth</th>
+                  <th className="border p-2">DOB</th>
                   <th className="border p-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {wardens.map((warden) => (
-                  <tr key={warden.id} className="text-center border-t">
-                    <td className="border p-2">{warden.name}</td>
-                    <td className="border p-2">{warden.email}</td>
-                    <td className="border p-2">{warden.assignedHostel}</td>
-                    <td className="border p-2">{warden.contact}</td>
-                    <td className="border p-2">{warden.gender}</td>
-                    <td className="border p-2">{warden.dob}</td>
+                {wardens.map(w => (
+                  <tr key={w._id} className="text-center border-t">
+                    <td className="border p-2">{w.name}</td>
+                    <td className="border p-2">{w.email}</td>
                     <td className="border p-2">
+                      {w.assignedHostels?.map(h => hostels.find(hst => hst._id === h)? hostels.find(hst => hst._id === h).name : "-").join(", ") || "-"}
+                    </td>
+                    <td className="border p-2">{w.phone}</td>
+                    <td className="border p-2">{w.gender}</td>
+                    <td className="border p-2">{w.dob ? new Date(w.dob).toLocaleDateString() : "-"}</td>
+                    <td className="border p-2 flex justify-center gap-2 flex-wrap">
                       <button
                         className="bg-blue-600 text-white px-3 py-1 rounded-xl hover:bg-blue-500 transition"
-                        onClick={() => handleEdit(warden)}
+                        onClick={() => handleEdit(w)}
                       >
                         Edit
+                      </button>
+                      <button
+                        className="bg-red-600 text-white px-3 py-1 rounded-xl hover:bg-red-500 transition"
+                        onClick={() => handleDelete(w._id)}
+                      >
+                        Delete
                       </button>
                     </td>
                   </tr>
@@ -106,7 +145,7 @@ export default function WardenManagement() {
         <WardenForm
           wardenData={editingWarden}
           onSubmit={handleFormSubmit}
-          hostelOptions={mockHostels}
+          hostelOptions={hostels}
         />
       )}
     </div>

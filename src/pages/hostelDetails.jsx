@@ -1,61 +1,68 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
-import BookingModal from "../components/PaymentModal"; // Updated to BookingModal
-
-// ================= MOCK HOSTELS =================
-const hostels = [
-  {
-    id: 1,
-    name: "Green View Hostel",
-    location: "Nairobi",
-    address: "123 Nairobi Street",
-    description:
-      "Spacious rooms, WiFi, security, and meals included. Quiet environment ideal for students.",
-    price: 12000,
-    roomType: "single",
-    totalRooms: 10,
-    bedsPerRoom: 2,
-    amenities: ["WiFi", "Water", "Security", "Meals"],
-    status: "active",
-    genderPolicy: "male",
-    assignedWarden: "Warden A",
-    imageUrl:
-      "https://images.unsplash.com/photo-1633411187642-f84216917af1?w=1200&auto=format&fit=crop&q=60",
-  },
-  {
-    id: 2,
-    name: "Sunrise Hostel",
-    location: "Kisumu",
-    address: "456 Kisumu Road",
-    description:
-      "Affordable shared rooms with 24/7 water and electricity. Friendly management.",
-    price: 10000,
-    roomType: "shared",
-    totalRooms: 8,
-    bedsPerRoom: 4,
-    amenities: ["Water", "Electricity", "Meals"],
-    status: "active",
-    genderPolicy: "female",
-    assignedWarden: "Warden B",
-    imageUrl:
-      "https://plus.unsplash.com/premium_photo-1676321688630-9558e7d2be10?w=1200&auto=format&fit=crop&q=60",
-  },
-];
+import { useState, useEffect } from "react";
+import axios from "axios";
+import BookingModal from "../components/PaymentModal";
 
 export default function HostelDetails() {
   const { id } = useParams();
-  const hostel = hostels.find((h) => h.id === Number(id));
+  const [hostel, setHostel] = useState(null);
+  const [wardens, setWardens] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [openBooking, setOpenBooking] = useState(false);
 
-  if (!hostel) {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch hostel details
+        const hostelRes = await axios.get(`http://localhost:4000/api/hostels/${id}`);
+        setHostel(hostelRes.data);
+
+        // Fetch all wardens
+        const wardensRes = await axios.get("http://localhost:4000/api/wardens");
+        setWardens(wardensRes.data);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch hostel details or wardens.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg font-semibold">Hostel not found</p>
+        <p className="text-gray-600">Loading hostel details...</p>
+      </div>
+    );
+  }
+
+  if (error || !hostel) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600">{error || "Hostel not found"}</p>
       </div>
     );
   }
 
   const totalBeds = hostel.totalRooms * hostel.bedsPerRoom;
+
+  // Resolve assigned warden name
+  const assignedWardenName = () => {
+    if (!hostel.assignedWarden) return "Unassigned";
+
+    // If assignedWarden is a string (name)
+    if (typeof hostel.assignedWarden === "string") return hostel.assignedWarden;
+
+    // If assignedWarden is an ID
+    const w = wardens.find((w) => w._id === hostel.assignedWarden);
+    return w ? w.name : "Unknown";
+  };
 
   // Handle confirmed booking from modal
   const handleBookingConfirm = (bookingData) => {
@@ -68,7 +75,7 @@ export default function HostelDetails() {
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow overflow-hidden">
         {/* Hostel Image */}
         <img
-          src={hostel.imageUrl}
+          src={hostel.imageUrl || "https://via.placeholder.com/800x400"}
           alt={hostel.name}
           className="w-full h-72 object-cover"
         />
@@ -126,7 +133,7 @@ export default function HostelDetails() {
           <div>
             <h2 className="font-semibold mb-2">Amenities</h2>
             <div className="flex flex-wrap gap-2">
-              {hostel.amenities.map((amenity) => (
+              {hostel.amenities?.map((amenity) => (
                 <span
                   key={amenity}
                   className="bg-gray-100 px-3 py-1 rounded-full text-sm"
@@ -139,7 +146,7 @@ export default function HostelDetails() {
 
           {/* Assigned Warden */}
           <div className="text-sm text-gray-600">
-            <strong>Assigned Warden:</strong> {hostel.assignedWarden}
+            <strong>Assigned Warden:</strong> {assignedWardenName()}
           </div>
 
           {/* Actions */}
