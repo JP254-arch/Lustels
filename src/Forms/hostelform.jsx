@@ -36,7 +36,7 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     "Study Room",
   ];
 
-  // Fetch wardens
+  // ---------------- FETCH WARDENS ----------------
   useEffect(() => {
     const fetchWardens = async () => {
       try {
@@ -53,15 +53,24 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     fetchWardens();
   }, []);
 
-  // Populate form if editing
+  // ---------------- POPULATE FORM IF EDITING ----------------
   useEffect(() => {
     if (hostelData) {
-      setFormData({ ...initialState, ...hostelData });
+      // Ensure assignedWarden is the _id
+      setFormData({
+        ...initialState,
+        ...hostelData,
+        assignedWarden: hostelData.assignedWarden?._id || "",
+      });
     }
   }, [hostelData]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value || null, // convert empty string to null
+    }));
   };
 
   const handleAmenityChange = (amenity) => {
@@ -73,6 +82,7 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     }));
   };
 
+  // ---------------- HANDLE SUBMIT ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -90,25 +100,19 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     try {
       let res;
       if (hostelData?._id) {
+        // UPDATE
         res = await axios.put(
           `http://localhost:4000/api/hostels/${hostelData._id}`,
           payload
         );
       } else {
+        // ADD NEW
         res = await axios.post("http://localhost:4000/api/hostels", payload);
       }
 
-      // Clear error and show success
-      setError("");
       setSuccess(hostelData ? "Hostel updated successfully!" : "Hostel added successfully!");
-
-      // Call parent callback
       if (onSubmit) onSubmit(res.data);
-
-      // Reset form if adding new
       if (!hostelData) setFormData(initialState);
-
-      // Hide success after 3 seconds
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error(err);
@@ -297,7 +301,7 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                     : "Assign Warden"}
                 </option>
                 {wardens.map((warden) => (
-                  <option key={warden._id} value={warden.name}>
+                  <option key={warden._id} value={warden._id}>
                     {warden.name}
                   </option>
                 ))}

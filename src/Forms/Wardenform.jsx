@@ -1,23 +1,27 @@
 import { useState, useEffect } from "react";
 
-export default function WardenForm({ wardenData = null, onSubmit, hostelOptions = [] }) {
+export default function WardenForm({
+  wardenData = null,
+  onSubmit,
+  hostelOptions = [],
+}) {
   const [warden, setWarden] = useState({
     name: "",
     email: "",
-    assignedHostels: [],
+    assignedHostel: "",
     phone: "",
     gender: "",
     dob: "",
   });
 
-  const genderOptions = ["Male", "Female", "Other"];
+  const genderOptions = ["male", "female", "other"];
 
   useEffect(() => {
     if (wardenData) {
       setWarden({
         name: wardenData.name || "",
         email: wardenData.email || "",
-        assignedHostels: wardenData.assignedHostels || [],
+        assignedHostel: wardenData.assignedHostel?._id || "",
         phone: wardenData.phone || "",
         gender: wardenData.gender || "",
         dob: wardenData.dob ? wardenData.dob.split("T")[0] : "",
@@ -26,12 +30,8 @@ export default function WardenForm({ wardenData = null, onSubmit, hostelOptions 
   }, [wardenData]);
 
   const handleChange = (e) => {
-    setWarden({ ...warden, [e.target.name]: e.target.value });
-  };
-
-  const handleHostelChange = (e) => {
-    const selected = Array.from(e.target.selectedOptions, option => option.value);
-    setWarden(prev => ({ ...prev, assignedHostels: selected }));
+    const { name, value } = e.target;
+    setWarden((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
@@ -45,9 +45,9 @@ export default function WardenForm({ wardenData = null, onSubmit, hostelOptions 
         <h1 className="text-2xl font-bold mb-6">
           {wardenData ? "Update Warden" : "Add New Warden"}
         </h1>
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <input
-            type="text"
             name="name"
             value={warden.name}
             onChange={handleChange}
@@ -55,6 +55,7 @@ export default function WardenForm({ wardenData = null, onSubmit, hostelOptions 
             className="border p-3 rounded-xl w-full"
             required
           />
+
           <input
             type="email"
             name="email"
@@ -64,25 +65,31 @@ export default function WardenForm({ wardenData = null, onSubmit, hostelOptions 
             className="border p-3 rounded-xl w-full"
             required
           />
+
+          {/* HOSTEL DROPDOWN */}
           <select
-            multiple
-            name="assignedHostels"
-            value={warden.assignedHostels}
-            onChange={handleHostelChange}
+            name="assignedHostel"
+            value={warden.assignedHostel}
+            onChange={handleChange}
             className="border p-3 rounded-xl w-full"
+            required
           >
-            {hostelOptions.map(h => (
-              <option key={h._id} value={h._id}>{h.name}</option>
+            <option value="">Select Hostel</option>
+            {hostelOptions.map((h) => (
+              <option key={h._id} value={h._id}>
+                {h.name}
+              </option>
             ))}
           </select>
+
           <input
-            type="text"
             name="phone"
             value={warden.phone}
             onChange={handleChange}
             placeholder="Phone Number"
             className="border p-3 rounded-xl w-full"
           />
+
           <select
             name="gender"
             value={warden.gender}
@@ -91,10 +98,13 @@ export default function WardenForm({ wardenData = null, onSubmit, hostelOptions 
             required
           >
             <option value="">Select Gender</option>
-            {genderOptions.map(g => (
-              <option key={g} value={g.toLowerCase()}>{g}</option>
+            {genderOptions.map((g) => (
+              <option key={g} value={g}>
+                {g.charAt(0).toUpperCase() + g.slice(1)}
+              </option>
             ))}
           </select>
+
           <input
             type="date"
             name="dob"
@@ -102,6 +112,7 @@ export default function WardenForm({ wardenData = null, onSubmit, hostelOptions 
             onChange={handleChange}
             className="border p-3 rounded-xl w-full"
           />
+
           <button
             type="submit"
             className="bg-orange-900 text-white px-5 py-3 rounded-xl w-full hover:bg-orange-800 transition"

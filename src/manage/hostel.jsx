@@ -1,177 +1,157 @@
 import { useState, useEffect } from "react";
-import { Button, Modal } from "react-bootstrap";
 import axios from "axios";
 import AddOrUpdateHostel from "../Forms/hostelform";
 
 export default function ManageHostels() {
   const [hostels, setHostels] = useState([]);
+  const [editingHostel, setEditingHostel] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [wardens, setWardens] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedHostel, setSelectedHostel] = useState(null);
 
-  // Fetch hostels from backend
+  // ---------------- FETCH DATA ----------------
   useEffect(() => {
-    const fetchHostels = async () => {
+    const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:4000/api/hostels");
-        setHostels(res.data);
+        setLoading(true);
+        const [resHostels, resWardens] = await Promise.all([
+          axios.get("http://localhost:4000/api/hostels"),
+          axios.get("http://localhost:4000/api/wardens"),
+        ]);
+
+        setHostels(resHostels.data);
+        setWardens(resWardens.data);
       } catch (err) {
-        console.error("Failed to fetch hostels:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchHostels();
+    fetchData();
   }, []);
 
-  const handleAdd = () => {
-    setSelectedHostel(null);
-    setShowModal(true);
+  // ---------------- HANDLE SAVE ----------------
+  const handleSave = (hostel) => {
+    const exists = hostels.find(h => h._id === hostel._id);
+    if (exists) {
+      setHostels(prev =>
+        prev.map(h => (h._id === hostel._id ? hostel : h))
+      );
+    } else {
+      setHostels(prev => [...prev, hostel]);
+    }
+    setShowForm(false);
+    setEditingHostel(null);
   };
 
-  const handleEdit = (hostel) => {
-    setSelectedHostel(hostel);
-    setShowModal(true);
-  };
-
+  // ---------------- HANDLE DELETE ----------------
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this hostel permanently?")) return;
+    if (!confirm("Are you sure you want to delete this hostel?")) return;
     try {
       await axios.delete(`http://localhost:4000/api/hostels/${id}`);
-      setHostels((prev) => prev.filter((h) => h._id !== id));
+      setHostels(prev => prev.filter(h => h._id !== id));
     } catch (err) {
       console.error("Failed to delete hostel:", err);
     }
   };
 
+  // ---------------- HANDLE TOGGLE STATUS ----------------
   const handleToggleStatus = async (id) => {
-    const hostel = hostels.find((h) => h._id === id);
+    const hostel = hostels.find(h => h._id === id);
     if (!hostel) return;
     const updatedStatus = hostel.status === "active" ? "inactive" : "active";
-
     try {
-      const res = await axios.patch(`http://localhost:4000/api/hostels/${id}`, {
-        status: updatedStatus,
-      });
-      setHostels((prev) =>
-        prev.map((h) => (h._id === id ? { ...h, status: res.data.status } : h))
+      const res = await axios.patch(`http://localhost:4000/api/hostels/${id}`, { status: updatedStatus });
+      setHostels(prev =>
+        prev.map(h => (h._id === id ? { ...h, status: res.data.status } : h))
       );
     } catch (err) {
       console.error("Failed to update status:", err);
     }
   };
 
-  const handleFormSubmit = async (data) => {
-    try {
-      if (selectedHostel) {
-        // Update existing hostel
-        const res = await axios.put(
-          `http://localhost:4000/api/hostels/${selectedHostel._id}`,
-          data
-        );
-        setHostels((prev) =>
-          prev.map((h) => (h._id === selectedHostel._id ? res.data : h))
-        );
-      } else {
-        // Add new hostel
-        const res = await axios.post("http://localhost:4000/api/hostels", data);
-        setHostels((prev) => [...prev, res.data]);
-      }
-      setShowModal(false);
-    } catch (err) {
-      console.error("Failed to save hostel:", err);
-    }
-  };
-
-  if (loading) return <p className="p-6">Loading hostels...</p>;
+  if (loading) return <p className="p-6 text-center">Loading hostels...</p>;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <h1 className="text-2xl font-bold">Manage Hostels</h1>
-        <Button variant="success" onClick={handleAdd}>
-          Add Hostel
-        </Button>
-      </div>
+    <div className="min-h-screen bg-gray-100 p-6">
+      {!showForm ? (
+        <>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Manage Hostels</h1>
+            <button
+              onClick={() => { setEditingHostel(null); setShowForm(true); }}
+              className="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700"
+            >
+              ➕ Add Hostel
+            </button>
+          </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl shadow overflow-x-auto">
-        <table className="min-w-full border-collapse text-center">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border p-2">Image</th>
-              <th className="border p-2">Name</th>
-              <th className="border p-2">Location</th>
-              <th className="border p-2">Room Type</th>
-              <th className="border p-2">Rooms</th>
-              <th className="border p-2">Beds / Room</th>
-              <th className="border p-2">Gender</th>
-              <th className="border p-2">Status</th>
-              <th className="border p-2">Warden</th>
-              <th className="border p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {hostels.map((hostel) => (
-              <tr key={hostel._id}>
-                <td className="border p-2">
-                  <img
-                    src={hostel.imageUrl}
-                    alt={hostel.name}
-                    className="w-20 h-16 object-cover mx-auto rounded"
-                  />
-                </td>
-                <td className="border p-2">{hostel.name}</td>
-                <td className="border p-2">{hostel.location}</td>
-                <td className="border p-2 capitalize">{hostel.roomType}</td>
-                <td className="border p-2">{hostel.totalRooms}</td>
-                <td className="border p-2">{hostel.bedsPerRoom}</td>
-                <td className="border p-2 capitalize">{hostel.genderPolicy}</td>
-                <td className="border p-2 capitalize">{hostel.status}</td>
-                <td className="border p-2">{hostel.assignedWarden}</td>
-                <td className="border p-2">
-                  <div className="flex justify-center gap-2 flex-wrap">
-                    <Button size="sm" onClick={() => handleEdit(hostel)}>
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={hostel.status === "active" ? "warning" : "success"}
-                      onClick={() => handleToggleStatus(hostel._id)}
-                    >
-                      {hostel.status === "active" ? "Deactivate" : "Activate"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => handleDelete(hostel._id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Modal */}
-      <Modal
-        show={showModal}
-        onHide={() => setShowModal(false)}
-        size="lg"
-        centered
-        scrollable
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>{selectedHostel ? "Update Hostel" : "Add Hostel"}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <AddOrUpdateHostel hostelData={selectedHostel} onSubmit={handleFormSubmit} />
-        </Modal.Body>
-      </Modal>
+          {/* Table */}
+          <div className="overflow-x-auto bg-white rounded-2xl shadow p-4">
+            <table className="w-full table-auto">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-2">Name</th>
+                  <th className="p-2">Location</th>
+                  <th className="p-2">Room Type</th>
+                  <th className="p-2">Rooms</th>
+                  <th className="p-2">Beds / Room</th>
+                  <th className="p-2">Gender</th>
+                  <th className="p-2">Status</th>
+                  <th className="p-2">Warden</th>
+                  <th className="p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hostels.map(h => (
+                  <tr key={h._id} className="text-center border-t">
+                    <td className="p-2">{h.name}</td>
+                    <td className="p-2">{h.location}</td>
+                    <td className="p-2 capitalize">{h.roomType}</td>
+                    <td className="p-2">{h.totalRooms}</td>
+                    <td className="p-2">{h.bedsPerRoom}</td>
+                    <td className="p-2 capitalize">{h.genderPolicy}</td>
+                    <td className="p-2">
+                      <span className={`px-3 py-1 rounded-full text-white text-sm ${h.status === "active" ? "bg-green-500" : "bg-gray-500"}`}>
+                        {h.status}
+                      </span>
+                    </td>
+                    <td className="p-2">{h.assignedWarden?.name || "Unassigned"}</td>
+                    <td className="p-2 space-x-2">
+                      <button
+                        onClick={() => { setEditingHostel(h); setShowForm(true); }}
+                        className="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(h._id)}
+                        className={`px-3 py-1 rounded text-white ${h.status === "active" ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"}`}
+                      >
+                        {h.status === "active" ? "Deactivate" : "Activate"}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(h._id)}
+                        className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        <AddOrUpdateHostel
+          hostelData={editingHostel}
+          wardens={wardens}
+          onSubmit={handleSave}
+          onCancel={() => { setShowForm(false); setEditingHostel(null); }}
+        />
+      )}
     </div>
   );
 }

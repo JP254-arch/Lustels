@@ -93,6 +93,7 @@ export default function ManageResidents() {
                 <tr>
                   <th className="p-2">Name</th>
                   <th className="p-2">Hostel</th>
+                  <th className="p-2">Warden</th> {/* Added column */}
                   <th className="p-2">Room</th>
                   <th className="p-2">Status</th>
                   <th className="p-2">Check-In</th>
@@ -105,6 +106,7 @@ export default function ManageResidents() {
                   <tr key={r._id} className="text-center border-t">
                     <td className="p-2">{r.name}</td>
                     <td className="p-2">{r.hostel?.name || "—"}</td>
+                    <td className="p-2">{r.assignedWarden?.name || "—"}</td> {/* Display assigned warden */}
                     <td className="p-2">{r.roomNumber}</td>
                     <td className="p-2">
                       <span className={`px-3 py-1 rounded-full text-white text-sm ${r.status === "active" ? "bg-green-500" : "bg-gray-500"}`}>
@@ -137,7 +139,7 @@ export default function ManageResidents() {
         <AddOrUpdateResident
           residentData={editingResident}
           hostels={hostels}
-          wardens={wardens} // pass if needed later
+          wardens={wardens}
           onSubmit={handleSave}
           onCancel={() => { setShowForm(false); setEditingResident(null); }}
         />

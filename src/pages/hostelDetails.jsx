@@ -16,7 +16,7 @@ export default function HostelDetails() {
       try {
         setLoading(true);
 
-        // Fetch hostel details
+        // Fetch hostel details with populated warden if possible
         const hostelRes = await axios.get(`http://localhost:4000/api/hostels/${id}`);
         setHostel(hostelRes.data);
 
@@ -52,12 +52,14 @@ export default function HostelDetails() {
 
   const totalBeds = hostel.totalRooms * hostel.bedsPerRoom;
 
-  // Resolve assigned warden name
+  // Resolve assigned warden name (supports both ObjectId and populated object)
   const assignedWardenName = () => {
     if (!hostel.assignedWarden) return "Unassigned";
 
-    // If assignedWarden is a string (name)
-    if (typeof hostel.assignedWarden === "string") return hostel.assignedWarden;
+    // If assignedWarden is already an object with name
+    if (typeof hostel.assignedWarden === "object" && hostel.assignedWarden.name) {
+      return hostel.assignedWarden.name;
+    }
 
     // If assignedWarden is an ID
     const w = wardens.find((w) => w._id === hostel.assignedWarden);
