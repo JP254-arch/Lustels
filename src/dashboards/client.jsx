@@ -1,57 +1,78 @@
-import React, { useState } from "react";
-
-/* ---------------- MOCK DATA ---------------- */
-
-const mockUser = {
-  name: "John Doe",
-  gender: "Male",
-  email: "john@example.com",
-  contact: "0712345678",
-  profilePhoto: "",
-};
-
-const mockBooking = {
-  hostelName: "Green View Hostel",
-  location: "Nairobi",
-  roomType: "Single",
-  roomNumber: "A12",
-  bedNumber: "1",
-  checkIn: "2026-01-01",
-  checkOut: "2026-03-01",
-  pricePerMonth: 12000,
-  amountPaid: 18000,
-  assignedWarden: "Mr. Kamau",
-  status: "Confirmed",
-  amenities: ["WiFi", "Meals", "Security", "Water"],
-  image: "https://via.placeholder.com/600x300",
-  loanAmount: 5000,
-};
-
-/* ---------------- COMPONENT ---------------- */
+import React, { useEffect, useState } from "react";
+import api from "../api/axios";
 
 export default function ClientDashboard() {
-  const [user, setUser] = useState(mockUser);
-  const [profilePhoto, setProfilePhoto] = useState(mockUser.profilePhoto);
+  const [user, setUser] = useState(null);
+  const [booking, setBooking] = useState(null);
+  const [profilePhoto, setProfilePhoto] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  /* ---------- Finance Calculations ---------- */
-  const checkIn = new Date(mockBooking.checkIn);
-  const checkOut = new Date(mockBooking.checkOut);
+  /* ================= FETCH DATA ================= */
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [userRes, bookingRes] = await Promise.all([
+          api.get("/residents/me"),
+          api.get("/bookings/my-booking"),
+        ]);
+
+        setUser(userRes.data);
+        setProfilePhoto(userRes.data.profilePhoto || "");
+        setBooking(bookingRes.data);
+      } catch (err) {
+        setError(
+          err.response?.data?.message || "Failed to load dashboard data"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  /* ================= LOADING / ERROR ================= */
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  /* ================= FINANCE CALCULATIONS ================= */
+  const checkIn = new Date(booking.checkIn);
+  const checkOut = new Date(booking.checkOut);
+
   const months =
     (checkOut.getFullYear() - checkIn.getFullYear()) * 12 +
     (checkOut.getMonth() - checkIn.getMonth()) +
     1;
 
-  const totalPayable = months * mockBooking.pricePerMonth;
-  const balance = totalPayable - mockBooking.amountPaid;
+  const totalPayable = months * booking.pricePerMonth;
+  const balance = totalPayable - booking.amountPaid;
   const paymentProgress = Math.min(
-    (mockBooking.amountPaid / totalPayable) * 100,
+    (booking.amountPaid / totalPayable) * 100,
     100
   );
 
   const paymentStatus =
-    balance <= 0 ? "Paid" : mockBooking.amountPaid > 0 ? "Partially Paid" : "Unpaid";
+    balance <= 0
+      ? "Paid"
+      : booking.amountPaid > 0
+      ? "Partially Paid"
+      : "Unpaid";
 
-  /* ---------- Handlers ---------- */
+  /* ================= HANDLERS ================= */
   const handleProfileChange = (e) =>
     setUser({ ...user, [e.target.name]: e.target.value });
 
@@ -63,9 +84,20 @@ export default function ClientDashboard() {
     reader.readAsDataURL(file);
   };
 
-  const handleProfileSubmit = (e) => {
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    alert("Profile updated successfully (mock)");
+    try {
+      await api.put("/residents/me", {
+        name: user.name,
+        gender: user.gender,
+        email: user.email,
+        contact: user.contact,
+        profilePhoto,
+      });
+      alert("Profile updated successfully");
+    } catch {
+      alert("Failed to update profile");
+    }
   };
 
   return (
@@ -106,9 +138,9 @@ export default function ClientDashboard() {
         {/* ---------- QUICK STATS ---------- */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { label: "Monthly Rent", value: `KES ${mockBooking.pricePerMonth}` },
+            { label: "Monthly Rent", value: `KES ${booking.pricePerMonth}` },
             { label: "Total Payable", value: `KES ${totalPayable}` },
-            { label: "Paid", value: `KES ${mockBooking.amountPaid}` },
+            { label: "Paid", value: `KES ${booking.amountPaid}` },
             { label: "Balance", value: `KES ${balance}` },
           ].map((item) => (
             <div
@@ -122,38 +154,35 @@ export default function ClientDashboard() {
         </section>
 
         {/* ---------- HOSTEL DETAILS ---------- */}
-        <section
-          id="myhostel"
-          className="bg-white rounded-2xl shadow p-6 overflow-hidden"
-        >
+        <section id="myhostel" className="bg-white rounded-2xl shadow p-6">
           <h2 className="text-xl font-bold mb-4">My Hostel</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <img
-              src={mockBooking.image}
+              src={booking.image}
               alt="Hostel"
               className="rounded-xl h-60 w-full object-cover"
             />
 
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold">{mockBooking.hostelName}</h3>
-              <p className="text-gray-600">{mockBooking.location}</p>
+              <h3 className="text-lg font-semibold">{booking.hostelName}</h3>
+              <p className="text-gray-600">{booking.location}</p>
 
               <p>
-                Room: <strong>{mockBooking.roomType}</strong> —{" "}
-                {mockBooking.roomNumber} / Bed {mockBooking.bedNumber}
+                Room: <strong>{booking.roomType}</strong> —{" "}
+                {booking.roomNumber} / Bed {booking.bedNumber}
               </p>
 
               <p>
-                Stay: {mockBooking.checkIn} → {mockBooking.checkOut}
+                Stay: {booking.checkIn} → {booking.checkOut}
               </p>
 
               <p>
-                Warden: <strong>{mockBooking.assignedWarden}</strong>
+                Warden: <strong>{booking.assignedWarden}</strong>
               </p>
 
               <div className="flex flex-wrap gap-2 mt-2">
-                {mockBooking.amenities.map((a) => (
+                {booking.amenities.map((a) => (
                   <span
                     key={a}
                     className="px-3 py-1 bg-slate-100 rounded-full text-sm"
@@ -165,59 +194,14 @@ export default function ClientDashboard() {
 
               <span
                 className={`inline-block mt-3 px-4 py-1 rounded-full text-white text-sm ${
-                  mockBooking.status === "Confirmed" ? "bg-green-600" : "bg-yellow-500"
+                  booking.status === "Confirmed"
+                    ? "bg-green-600"
+                    : "bg-yellow-500"
                 }`}
               >
-                {mockBooking.status}
+                {booking.status}
               </span>
             </div>
-          </div>
-        </section>
-
-        {/* ---------- FINANCE ---------- */}
-        <section id="payments" className="bg-white rounded-2xl shadow p-6">
-          <h2 className="text-xl font-bold mb-4">Finance Overview</h2>
-
-          <p className="mb-2">
-            Status:{" "}
-            <span
-              className={`font-semibold ${
-                paymentStatus === "Paid"
-                  ? "text-green-600"
-                  : paymentStatus === "Partially Paid"
-                  ? "text-yellow-600"
-                  : "text-red-600"
-              }`}
-            >
-              {paymentStatus}
-            </span>
-          </p>
-
-          <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
-            <div
-              className="bg-green-600 h-4"
-              style={{ width: `${paymentProgress}%` }}
-            />
-          </div>
-
-          {mockBooking.loanAmount > 0 && (
-            <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-              <p>
-                Active Loan: <strong>KES {mockBooking.loanAmount}</strong>
-              </p>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-3 mt-6">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-              Make Payment
-            </button>
-            <button className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg">
-              Payment History
-            </button>
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
-              Download Receipt
-            </button>
           </div>
         </section>
 
@@ -227,7 +211,7 @@ export default function ClientDashboard() {
 
           <form
             onSubmit={handleProfileSubmit}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end"
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
           >
             <input
               name="name"
@@ -242,10 +226,11 @@ export default function ClientDashboard() {
               onChange={handleProfileChange}
               className="border p-3 rounded-xl"
             >
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
             </select>
+
             <input
               name="email"
               value={user.email}
@@ -261,7 +246,7 @@ export default function ClientDashboard() {
               placeholder="Contact"
             />
 
-            <div className="md:col-span-2 flex flex-col items-start">
+            <div className="md:col-span-2">
               {profilePhoto && (
                 <img
                   src={profilePhoto}
@@ -272,20 +257,10 @@ export default function ClientDashboard() {
               <input type="file" onChange={handlePhotoChange} />
             </div>
 
-            <button className="md:col-span-2 bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition">
+            <button className="md:col-span-2 bg-black text-white py-3 rounded-xl">
               Update Profile
             </button>
           </form>
-        </section>
-
-        {/* ---------- NOTIFICATIONS ---------- */}
-        <section id="notifications" className="bg-white rounded-2xl shadow p-6">
-          <h2 className="text-xl font-bold mb-4">Notifications</h2>
-          <ul className="space-y-2 list-disc pl-5 text-gray-700">
-            <li>Next payment reminder approaching</li>
-            <li>Loan repayment update available</li>
-            <li>Hostel notice from management</li>
-          </ul>
         </section>
       </main>
     </div>
