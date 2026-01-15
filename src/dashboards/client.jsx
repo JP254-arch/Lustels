@@ -4,26 +4,22 @@ import api from "../api/axios";
 export default function ClientDashboard() {
   const [user, setUser] = useState(null);
   const [booking, setBooking] = useState(null);
-  const [profilePhoto, setProfilePhoto] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  /* ================= FETCH DATA ================= */
+  // ================= FETCH DATA =================
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const [userRes, bookingRes] = await Promise.all([
-          api.get("/residents/me"),
-          api.get("/bookings/my-booking"),
+          api.get("/residents/me").catch(() => null),
+          api.get("/bookings/my-booking").catch(() => null),
         ]);
 
-        setUser(userRes.data);
-        setProfilePhoto(userRes.data.profilePhoto || "");
-        setBooking(bookingRes.data);
+        setUser(userRes?.data || {}); // fallback to empty object
+        setBooking(bookingRes?.data || null); // null if no booking
       } catch (err) {
-        setError(
-          err.response?.data?.message || "Failed to load dashboard data"
-        );
+        setError(err.response?.data?.message || "Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
@@ -32,7 +28,7 @@ export default function ClientDashboard() {
     fetchDashboardData();
   }, []);
 
-  /* ================= LOADING / ERROR ================= */
+  // ================= LOADING / ERROR =================
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -49,40 +45,23 @@ export default function ClientDashboard() {
     );
   }
 
-  /* ================= FINANCE CALCULATIONS ================= */
-  const checkIn = new Date(booking.checkIn);
-  const checkOut = new Date(booking.checkOut);
+  // ================= SAFE FINANCE CALCULATIONS =================
+  const checkIn = booking?.checkIn ? new Date(booking.checkIn) : null;
+  const checkOut = booking?.checkOut ? new Date(booking.checkOut) : null;
 
   const months =
-    (checkOut.getFullYear() - checkIn.getFullYear()) * 12 +
-    (checkOut.getMonth() - checkIn.getMonth()) +
-    1;
+    checkIn && checkOut
+      ? (checkOut.getFullYear() - checkIn.getFullYear()) * 12 +
+        (checkOut.getMonth() - checkIn.getMonth()) +
+        1
+      : 0;
 
-  const totalPayable = months * booking.pricePerMonth;
-  const balance = totalPayable - booking.amountPaid;
-  const paymentProgress = Math.min(
-    (booking.amountPaid / totalPayable) * 100,
-    100
-  );
+  const totalPayable = months * (booking?.pricePerMonth || 0);
+  const balance = totalPayable - (booking?.amountPaid || 0);
 
-  const paymentStatus =
-    balance <= 0
-      ? "Paid"
-      : booking.amountPaid > 0
-      ? "Partially Paid"
-      : "Unpaid";
-
-  /* ================= HANDLERS ================= */
+  // ================= HANDLERS =================
   const handleProfileChange = (e) =>
     setUser({ ...user, [e.target.name]: e.target.value });
-
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setProfilePhoto(reader.result);
-    reader.readAsDataURL(file);
-  };
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
@@ -92,7 +71,6 @@ export default function ClientDashboard() {
         gender: user.gender,
         email: user.email,
         contact: user.contact,
-        profilePhoto,
       });
       alert("Profile updated successfully");
     } catch {
@@ -120,7 +98,13 @@ export default function ClientDashboard() {
           )}
         </nav>
 
-        <button className="mt-auto bg-red-600 hover:bg-red-700 transition py-2 rounded-lg">
+        <button
+          className="mt-auto bg-red-600 hover:bg-red-700 transition py-2 rounded-lg"
+          onClick={() => {
+            localStorage.removeItem("token");
+            window.location.reload();
+          }}
+        >
           Logout
         </button>
       </aside>
@@ -129,7 +113,7 @@ export default function ClientDashboard() {
       <main className="flex-1 p-6 space-y-8">
         {/* ---------- WELCOME ---------- */}
         <section className="bg-white rounded-2xl p-6 shadow">
-          <h1 className="text-2xl font-bold">Welcome back, {user.name}</h1>
+          <h1 className="text-2xl font-bold">Welcome back, {user?.name || "Resident"}</h1>
           <p className="text-gray-600 mt-1">
             Here is a summary of your stay and finances
           </p>
@@ -137,10 +121,10 @@ export default function ClientDashboard() {
 
         {/* ---------- QUICK STATS ---------- */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[
-            { label: "Monthly Rent", value: `KES ${booking.pricePerMonth}` },
+          {[ 
+            { label: "Monthly Rent", value: `KES ${booking?.pricePerMonth || 0}` },
             { label: "Total Payable", value: `KES ${totalPayable}` },
-            { label: "Paid", value: `KES ${booking.amountPaid}` },
+            { label: "Paid", value: `KES ${booking?.amountPaid || 0}` },
             { label: "Balance", value: `KES ${balance}` },
           ].map((item) => (
             <div
@@ -157,52 +141,54 @@ export default function ClientDashboard() {
         <section id="myhostel" className="bg-white rounded-2xl shadow p-6">
           <h2 className="text-xl font-bold mb-4">My Hostel</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <img
-              src={booking.image}
-              alt="Hostel"
-              className="rounded-xl h-60 w-full object-cover"
-            />
+          {booking ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <img
+                src={booking?.image || "/placeholder.jpg"}
+                alt="Hostel"
+                className="rounded-xl h-60 w-full object-cover"
+              />
 
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">{booking.hostelName}</h3>
-              <p className="text-gray-600">{booking.location}</p>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">{booking?.hostelName || "— Not Assigned —"}</h3>
+                <p className="text-gray-600">{booking?.location || "—"}</p>
 
-              <p>
-                Room: <strong>{booking.roomType}</strong> —{" "}
-                {booking.roomNumber} / Bed {booking.bedNumber}
-              </p>
+                <p>
+                  Room: <strong>{booking?.roomType || "—"}</strong> —{" "}
+                  {booking?.roomNumber || "—"} / Bed {booking?.bedNumber || "—"}
+                </p>
 
-              <p>
-                Stay: {booking.checkIn} → {booking.checkOut}
-              </p>
+                <p>
+                  Stay: {booking?.checkIn || "—"} → {booking?.checkOut || "—"}
+                </p>
 
-              <p>
-                Warden: <strong>{booking.assignedWarden}</strong>
-              </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {booking?.amenities?.length > 0
+                    ? booking.amenities.map((a) => (
+                        <span
+                          key={a}
+                          className="px-3 py-1 bg-slate-100 rounded-full text-sm"
+                        >
+                          {a}
+                        </span>
+                      ))
+                    : "No amenities assigned"}
+                </div>
 
-              <div className="flex flex-wrap gap-2 mt-2">
-                {booking.amenities.map((a) => (
-                  <span
-                    key={a}
-                    className="px-3 py-1 bg-slate-100 rounded-full text-sm"
-                  >
-                    {a}
-                  </span>
-                ))}
+                <span
+                  className={`inline-block mt-3 px-4 py-1 rounded-full text-white text-sm ${
+                    booking?.status === "Confirmed"
+                      ? "bg-green-600"
+                      : "bg-yellow-500"
+                  }`}
+                >
+                  {booking?.status || "Pending"}
+                </span>
               </div>
-
-              <span
-                className={`inline-block mt-3 px-4 py-1 rounded-full text-white text-sm ${
-                  booking.status === "Confirmed"
-                    ? "bg-green-600"
-                    : "bg-yellow-500"
-                }`}
-              >
-                {booking.status}
-              </span>
             </div>
-          </div>
+          ) : (
+            <p className="text-gray-500">No booking information available yet.</p>
+          )}
         </section>
 
         {/* ---------- PROFILE ---------- */}
@@ -215,14 +201,14 @@ export default function ClientDashboard() {
           >
             <input
               name="name"
-              value={user.name}
+              value={user?.name || ""}
               onChange={handleProfileChange}
               className="border p-3 rounded-xl"
               placeholder="Name"
             />
             <select
               name="gender"
-              value={user.gender}
+              value={user?.gender || ""}
               onChange={handleProfileChange}
               className="border p-3 rounded-xl"
             >
@@ -233,29 +219,18 @@ export default function ClientDashboard() {
 
             <input
               name="email"
-              value={user.email}
+              value={user?.email || ""}
               onChange={handleProfileChange}
               className="border p-3 rounded-xl"
               placeholder="Email"
             />
             <input
               name="contact"
-              value={user.contact}
+              value={user?.contact || ""}
               onChange={handleProfileChange}
               className="border p-3 rounded-xl"
               placeholder="Contact"
             />
-
-            <div className="md:col-span-2">
-              {profilePhoto && (
-                <img
-                  src={profilePhoto}
-                  alt="Profile"
-                  className="w-24 h-24 rounded-full mb-2 object-cover"
-                />
-              )}
-              <input type="file" onChange={handlePhotoChange} />
-            </div>
 
             <button className="md:col-span-2 bg-black text-white py-3 rounded-xl">
               Update Profile

@@ -14,12 +14,11 @@ export default function ManageHostels() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [resHostels, resWardens] = await Promise.all([
-          axios.get("http://localhost:4000/api/hostels"),
-          axios.get("http://localhost:4000/api/wardens"),
-        ]);
+        // Fetch hostels (should return assignedWarden populated)
+        const resHostels = await axios.get("http://localhost:4000/api/hostels");
+        const resWardens = await axios.get("http://localhost:4000/api/wardens");
 
-        setHostels(resHostels.data);
+        setHostels(resHostels.data); // assignedWarden already includes .user
         setWardens(resWardens.data);
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -29,6 +28,9 @@ export default function ManageHostels() {
     };
     fetchData();
   }, []);
+
+  // ---------------- HELPERS ----------------
+  const getWardenName = (assignedWarden) => assignedWarden?.user?.name || "Unassigned";
 
   // ---------------- HANDLE SAVE ----------------
   const handleSave = (hostel) => {
@@ -117,7 +119,7 @@ export default function ManageHostels() {
                         {h.status}
                       </span>
                     </td>
-                    <td className="p-2">{h.assignedWarden?.name || "Unassigned"}</td>
+                    <td className="p-2">{getWardenName(h.assignedWarden)}</td>
                     <td className="p-2 space-x-2">
                       <button
                         onClick={() => { setEditingHostel(h); setShowForm(true); }}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import AddOrUpdateResident from "../Forms/residentform";
 
 export default function ManageResidents() {
@@ -7,65 +7,52 @@ export default function ManageResidents() {
   const [editingResident, setEditingResident] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [hostels, setHostels] = useState([]);
-  const [wardens, setWardens] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ---------------- FETCH DATA ----------------
+  /* ================= FETCH DATA ================= */
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [resResidents, resHostels, resWardens] = await Promise.all([
-          axios.get("http://localhost:4000/api/residents"),
-          axios.get("http://localhost:4000/api/hostels"),
-          axios.get("http://localhost:4000/api/wardens")
+
+        const [resResidents, resHostels] = await Promise.all([
+          api.get("/residents"),
+          api.get("/hostels"),
         ]);
 
         setResidents(resResidents.data);
         setHostels(resHostels.data);
-        setWardens(resWardens.data);
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Failed to fetch residents:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
-  // ---------------- CALCULATIONS ----------------
-  const calculateMonths = (r) => {
-    if (!r.checkInDate || !r.checkOutDate) return 0;
-    const start = new Date(r.checkInDate);
-    const end = new Date(r.checkOutDate);
-    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
-    return months > 0 ? months : 0;
-  };
-
-  const calculateAmount = (r) => calculateMonths(r) * Number(r.monthlyRent || 0);
-  const calculatePaid = (r) => Number(r.amountPaid || 0) + Number(r.deposit || 0);
-  const calculateBalance = (r) => calculateAmount(r) - calculatePaid(r);
-
-  // ---------------- HANDLE SAVE ----------------
+  /* ================= HANDLE SAVE ================= */
   const handleSave = (resident) => {
-    const exists = residents.find(r => r._id === resident._id);
+    const exists = residents.find((r) => r._id === resident._id);
     if (exists) {
-      setResidents(prev =>
-        prev.map(r => (r._id === resident._id ? resident : r))
+      setResidents((prev) =>
+        prev.map((r) => (r._id === resident._id ? resident : r))
       );
     } else {
-      setResidents(prev => [...prev, resident]);
+      setResidents((prev) => [...prev, resident]);
     }
     setShowForm(false);
     setEditingResident(null);
   };
 
-  // ---------------- HANDLE DELETE ----------------
+  /* ================= HANDLE DELETE ================= */
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this resident?")) return;
+
     try {
-      await axios.delete(`http://localhost:4000/api/residents/${id}`);
-      setResidents(prev => prev.filter(r => r._id !== id));
+      await api.delete(`/residents/${id}`);
+      setResidents((prev) => prev.filter((r) => r._id !== id));
     } catch (err) {
       console.error("Failed to delete resident:", err);
     }
@@ -93,7 +80,6 @@ export default function ManageResidents() {
                 <tr>
                   <th className="p-2">Name</th>
                   <th className="p-2">Hostel</th>
-                  <th className="p-2">Warden</th> {/* Added column */}
                   <th className="p-2">Room</th>
                   <th className="p-2">Status</th>
                   <th className="p-2">Check-In</th>
@@ -102,22 +88,38 @@ export default function ManageResidents() {
                 </tr>
               </thead>
               <tbody>
-                {residents.map(r => (
+                {residents.map((r) => (
                   <tr key={r._id} className="text-center border-t">
                     <td className="p-2">{r.name}</td>
                     <td className="p-2">{r.hostel?.name || "—"}</td>
-                    <td className="p-2">{r.assignedWarden?.name || "—"}</td> {/* Display assigned warden */}
-                    <td className="p-2">{r.roomNumber}</td>
+                    <td className="p-2">{r.roomNumber || "—"}</td>
                     <td className="p-2">
-                      <span className={`px-3 py-1 rounded-full text-white text-sm ${r.status === "active" ? "bg-green-500" : "bg-gray-500"}`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-white text-sm ${
+                          r.status === "active"
+                            ? "bg-green-500"
+                            : "bg-gray-500"
+                        }`}
+                      >
                         {r.status}
                       </span>
                     </td>
-                    <td className="p-2">{r.checkInDate ? new Date(r.checkInDate).toLocaleDateString() : "—"}</td>
-                    <td className="p-2">{r.checkOutDate ? new Date(r.checkOutDate).toLocaleDateString() : "—"}</td>
+                    <td className="p-2">
+                      {r.checkInDate
+                        ? new Date(r.checkInDate).toLocaleDateString()
+                        : "—"}
+                    </td>
+                    <td className="p-2">
+                      {r.checkOutDate
+                        ? new Date(r.checkOutDate).toLocaleDateString()
+                        : "—"}
+                    </td>
                     <td className="p-2 space-x-2">
                       <button
-                        onClick={() => { setEditingResident(r); setShowForm(true); }}
+                        onClick={() => {
+                          setEditingResident(r);
+                          setShowForm(true);
+                        }}
                         className="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700"
                       >
                         Edit
@@ -139,9 +141,11 @@ export default function ManageResidents() {
         <AddOrUpdateResident
           residentData={editingResident}
           hostels={hostels}
-          wardens={wardens}
           onSubmit={handleSave}
-          onCancel={() => { setShowForm(false); setEditingResident(null); }}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingResident(null);
+          }}
         />
       )}
     </div>

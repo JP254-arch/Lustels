@@ -4,7 +4,6 @@ import axios from "axios";
 
 export default function Hostels() {
   const [hostels, setHostels] = useState([]);
-  const [wardens, setWardens] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -12,17 +11,11 @@ export default function Hostels() {
     const fetchData = async () => {
       try {
         setLoading(true);
-
-        const [hostelsRes, wardensRes] = await Promise.all([
-          axios.get("http://localhost:4000/api/hostels"),
-          axios.get("http://localhost:4000/api/wardens"),
-        ]);
-
-        setHostels(hostelsRes.data);
-        setWardens(wardensRes.data);
+        const res = await axios.get("http://localhost:4000/api/hostels");
+        setHostels(res.data);
       } catch (err) {
         console.error(err);
-        setError("Failed to fetch hostels or wardens.");
+        setError("Failed to fetch hostels.");
       } finally {
         setLoading(false);
       }
@@ -32,14 +25,7 @@ export default function Hostels() {
   }, []);
 
   const getWardenName = (assignedWarden) => {
-    if (!assignedWarden) return "Unassigned";
-
-    if (typeof assignedWarden === "string") {
-      const w = wardens.find((w) => w._id === assignedWarden);
-      return w ? w.name : "Unknown";
-    }
-
-    return assignedWarden.name || "Unknown";
+    return assignedWarden?.user?.name || "Unassigned";
   };
 
   if (loading)

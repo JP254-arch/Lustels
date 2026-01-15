@@ -45,7 +45,7 @@ function App() {
           {/* Dashboards */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/warden" element={<WardenDashboard />} />
-          <Route path="/client" element={<ClientDashboard />} />
+          <Route path="/resident" element={<ClientDashboard />} />
 
           {/* Forms */}
           <Route path="/hostel-form" element={<HostelForm />} />

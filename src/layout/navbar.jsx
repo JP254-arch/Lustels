@@ -38,7 +38,7 @@ const Navbar = () => {
           <a href="/hostels" className="text-gray-700 hover:text-blue-700 font-medium transition">
             Hostels
           </a>
-          <a href="/client" className="text-gray-700 hover:text-blue-700 font-medium transition">
+          <a href="/resident" className="text-gray-700 hover:text-blue-700 font-medium transition">
             Client Dashboard
           </a>
           <a href="/warden" className="text-gray-700 hover:text-blue-700 font-medium transition">
