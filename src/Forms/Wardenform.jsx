@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api/axios"; // token-aware axios instance
 
 export default function WardenForm({ wardenData = null, onSuccess }) {
   const [warden, setWarden] = useState({
     name: "",
     email: "",
-    assignedHostels: [], // array of selected hostel IDs
+    assignedHostels: [],
     phone: "",
     gender: "",
     dob: "",
@@ -17,7 +17,6 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-
   const [toast, setToast] = useState({ message: "", visible: false });
 
   const genderOptions = ["male", "female", "other"];
@@ -27,7 +26,7 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
     const fetchHostels = async () => {
       try {
         setLoadingHostels(true);
-        const res = await axios.get("http://localhost:4000/api/hostels"); // adjust URL if needed
+        const res = await api.get("/hostels");
         setHostels(res.data);
       } catch (err) {
         console.error(err);
@@ -71,7 +70,7 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
   // ---------------- TOAST HELPER ----------------
   const showToast = (message) => {
     setToast({ message, visible: true });
-    navigator.clipboard.writeText(message); // auto-copy
+    navigator.clipboard.writeText(message);
     setTimeout(() => setToast({ message: "", visible: false }), 10000);
   };
 
@@ -92,16 +91,18 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
 
     try {
       let res;
+
       if (wardenData?._id) {
-        // UPDATE
-        res = await axios.put(
-          `http://localhost:4000/api/wardens/${wardenData._id}`,
-          payload
-        );
+        // UPDATE existing warden
+        res = await api.put(`/wardens/${wardenData._id}`, payload);
         setSuccess("Warden updated successfully!");
       } else {
-        // CREATE
-        res = await axios.post("http://localhost:4000/api/wardens", payload);
+        // CREATE new warden
+        res = await api.post("/wardens", payload);
+
+        // Store JWT returned by backend
+        if (res.data.token) localStorage.setItem("token", res.data.token);
+
         setSuccess("Warden added successfully!");
         showToast(res.data.temporaryPassword);
       }
@@ -217,19 +218,10 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
       {toast.visible && (
         <div
           className="fixed top-6 right-6 bg-yellow-400 text-black px-5 py-3 rounded-lg shadow-lg font-semibold z-50 animate-slide-in"
-          style={{ animation: "slide-in 0.3s ease-out" }}
         >
           Temporary Password: {toast.message} (Copied!)
         </div>
       )}
-
-      {/* ---------------- SLIDE-IN ANIMATION ---------------- */}
-      <style>{`
-        @keyframes slide-in {
-          0% { transform: translateX(100%); opacity: 0; }
-          100% { transform: translateX(0); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 }
