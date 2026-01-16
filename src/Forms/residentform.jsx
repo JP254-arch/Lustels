@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api/axios";
 
 export default function AddOrUpdateResident({
   residentData = null,
   hostels = [],
-  wardens = [],
   onSubmit,
   onCancel,
 }) {
@@ -14,7 +13,6 @@ export default function AddOrUpdateResident({
     phone: "",
     gender: "male",
     hostel: "",
-    assignedWarden: "",
     roomNumber: "",
     bedNumber: "",
     status: "active",
@@ -34,27 +32,15 @@ export default function AddOrUpdateResident({
         ...initialState,
         ...residentData,
         hostel: residentData.hostel?._id || "",
-        assignedWarden: residentData.assignedWarden?._id || "",
+        checkInDate: residentData.checkIn
+          ? new Date(residentData.checkIn).toISOString().split("T")[0]
+          : "",
+        checkOutDate: residentData.checkOut
+          ? new Date(residentData.checkOut).toISOString().split("T")[0]
+          : "",
       });
     }
   }, [residentData]);
-
-  /* ================= AUTO-ASSIGN WARDEN ================= */
-  useEffect(() => {
-    if (!formData.hostel) {
-      setFormData((prev) => ({ ...prev, assignedWarden: "" }));
-      return;
-    }
-
-    const matchedWarden = wardens.find(
-      (w) => w.assignedHostel?._id === formData.hostel
-    );
-
-    setFormData((prev) => ({
-      ...prev,
-      assignedWarden: matchedWarden?._id || "",
-    }));
-  }, [formData.hostel, wardens]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,25 +54,29 @@ export default function AddOrUpdateResident({
     setError("");
 
     try {
+      // Map form fields to backend schema fields
+      const payload = {
+        ...formData,
+        checkIn: formData.checkInDate ? new Date(formData.checkInDate) : null,
+        checkOut: formData.checkOutDate
+          ? new Date(formData.checkOutDate)
+          : null,
+      };
+      delete payload.checkInDate;
+      delete payload.checkOutDate;
+
       const res = residentData?._id
-        ? await axios.put(
-            `http://localhost:4000/api/residents/${residentData._id}`,
-            formData
-          )
-        : await axios.post("http://localhost:4000/api/residents", formData);
+        ? await api.put(`/residents/${residentData._id}`, payload)
+        : await api.post("/residents", payload);
 
       onSubmit(res.data);
     } catch (err) {
-      console.error(err);
-      setError("Failed to save resident. Please try again.");
+      console.error("SAVE RESIDENT ERROR:", err);
+      setError(err.response?.data?.message || "Failed to save resident.");
     } finally {
       setLoading(false);
     }
   };
-
-  const selectedWarden = wardens.find(
-    (w) => w._id === formData.assignedWarden
-  );
 
   return (
     <form
@@ -147,19 +137,6 @@ export default function AddOrUpdateResident({
               {h.name}
             </option>
           ))}
-        </select>
-
-        {/* ================= AUTO-FILLED WARDEN ================= */}
-        <select
-          value={formData.assignedWarden}
-          disabled
-          className="border p-3 rounded-xl md:col-span-2 bg-gray-100"
-        >
-          <option value="">
-            {selectedWarden
-              ? selectedWarden.name
-              : "No warden assigned to this hostel"}
-          </option>
         </select>
 
         <input

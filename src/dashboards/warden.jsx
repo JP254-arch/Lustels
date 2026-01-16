@@ -11,8 +11,10 @@ export default function WardenDashboard() {
 
   /* ================= FETCH DATA ================= */
   useEffect(() => {
-    const fetchWardenData = async () => {
+    const fetchData = async () => {
       try {
+        setLoading(true);
+
         const [wardenRes, hostelsRes, residentsRes] = await Promise.all([
           api.get("/wardens/me"),
           api.get("/wardens/my-hostels"),
@@ -22,48 +24,70 @@ export default function WardenDashboard() {
         setWarden(wardenRes.data);
         setProfilePhoto(wardenRes.data.profilePhoto || "");
         setHostels(hostelsRes.data);
-        setResidents(residentsRes.data);
-      } catch (err) {
-        setError(
-          err.response?.data?.message || "Failed to load warden dashboard"
+
+        // Map residents to include hostel info and fallback dates
+        setResidents(
+          residentsRes.data.map((r) => {
+            const hostel = hostelsRes.data.find(
+              (h) =>
+                h._id ===
+                (typeof r.hostel === "object" ? r.hostel._id : r.hostel)
+            );
+            return {
+              ...r,
+              checkIn: r.checkIn || r.createdAt,
+              checkOut: r.checkOut || new Date(),
+              hostelName: hostel?.name || "Unknown",
+              amountPerMonth: hostel?.price || 0,
+              roomNumber: r.roomNumber || r.roomType || "N/A",
+              bedNumber: r.bedNumber || "N/A",
+            };
+          })
         );
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+        setError(err.response?.data?.message || "Failed to load dashboard data");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchWardenData();
+    fetchData();
   }, []);
 
-  /* ================= STATES ================= */
-  if (loading) {
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Loading dashboard...</p>
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-red-600">{error}</p>
       </div>
     );
-  }
 
   /* ================= HELPERS ================= */
-  const calculateTotalAmount = (resident) => {
-    const checkIn = new Date(resident.checkIn);
-    const checkOut = new Date(resident.checkOut);
+  const calculateMonths = (checkIn, checkOut) => {
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
     const months =
-      (checkOut.getFullYear() - checkIn.getFullYear()) * 12 +
-      (checkOut.getMonth() - checkIn.getMonth()) +
+      (end.getFullYear() - start.getFullYear()) * 12 +
+      (end.getMonth() - start.getMonth()) +
       1;
-    return months * resident.amountPerMonth;
+    return months > 0 ? months : 1;
   };
 
-  /* ================= PROFILE ================= */
+  const calculateTotalAmount = (resident) =>
+    calculateMonths(resident.checkIn, resident.checkOut) *
+    resident.amountPerMonth;
+
+  const calculateBalance = (resident) =>
+    calculateTotalAmount(resident) - (resident.amountPaid || 0);
+
+  /* ================= PROFILE HANDLERS ================= */
   const handleProfileChange = (e) =>
     setWarden({ ...warden, [e.target.name]: e.target.value });
 
@@ -106,7 +130,14 @@ export default function WardenDashboard() {
               </a>
             )
           )}
-          <a href="#" className="hover:bg-gray-700 p-2 rounded">
+          <a
+            href="#"
+            className="hover:bg-gray-700 p-2 rounded"
+            onClick={() => {
+              localStorage.removeItem("token");
+              window.location.reload();
+            }}
+          >
             Logout
           </a>
         </nav>
@@ -118,29 +149,25 @@ export default function WardenDashboard() {
         <section className="bg-white p-6 rounded-2xl shadow">
           <h1 className="text-2xl font-bold">Welcome, {warden.name}</h1>
           <p className="text-gray-600 mt-2">
-            Here’s an overview of your hostels and residents.
+            Overview of your hostels and residents.
           </p>
         </section>
 
         {/* ---------- HOSTELS ---------- */}
         <section id="myhostels" className="bg-white p-6 rounded-2xl shadow">
           <h2 className="text-xl font-bold mb-4">My Hostels</h2>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {hostels.map((hostel) => (
               <div key={hostel._id} className="bg-gray-50 p-4 rounded-2xl shadow">
                 <img
-                  src={hostel.image}
+                  src={hostel.image || "/placeholder.jpg"}
                   alt={hostel.name}
                   className="rounded-xl w-full h-48 object-cover mb-4"
                 />
                 <h3 className="text-lg font-semibold">{hostel.name}</h3>
                 <p className="text-gray-600">{hostel.location}</p>
+                <p>Monthly Rent: KES {hostel.price}</p>
                 <p>Total Rooms: {hostel.totalRooms}</p>
-                <p>Occupied Rooms: {hostel.occupiedRooms}</p>
-                <p>
-                  Vacant Rooms: {hostel.totalRooms - hostel.occupiedRooms}
-                </p>
               </div>
             ))}
           </div>
@@ -149,7 +176,6 @@ export default function WardenDashboard() {
         {/* ---------- RESIDENTS ---------- */}
         <section id="residents" className="bg-white p-6 rounded-2xl shadow">
           <h2 className="text-xl font-bold mb-4">Residents</h2>
-
           <div className="overflow-x-auto">
             <table className="min-w-full border">
               <thead className="bg-gray-100">
@@ -166,29 +192,26 @@ export default function WardenDashboard() {
                     "Balance",
                     "Loan",
                   ].map((h) => (
-                    <th key={h} className="border p-2">
-                      {h}
-                    </th>
+                    <th key={h} className="border p-2">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {residents.map((r) => {
                   const total = calculateTotalAmount(r);
-                  const balance = total - r.amountPaid;
-
+                  const balance = calculateBalance(r);
                   return (
                     <tr key={r._id} className="text-center">
-                      <td className="border p-2">{r.name}</td>
-                      <td className="border p-2">{r.contact}</td>
+                      <td className="border p-2">{r.user?.name || r.name}</td>
+                      <td className="border p-2">{r.user?.contact || r.contact}</td>
                       <td className="border p-2">{r.hostelName}</td>
-                      <td className="border p-2">{r.roomType}</td>
-                      <td className="border p-2">{r.checkIn}</td>
-                      <td className="border p-2">{r.checkOut}</td>
-                      <td className="border p-2">KES {r.amountPaid}</td>
+                      <td className="border p-2">{r.roomNumber} / {r.bedNumber}</td>
+                      <td className="border p-2">{new Date(r.checkIn).toLocaleDateString()}</td>
+                      <td className="border p-2">{new Date(r.checkOut).toLocaleDateString()}</td>
+                      <td className="border p-2">KES {r.amountPaid || 0}</td>
                       <td className="border p-2">KES {total}</td>
                       <td className="border p-2">KES {balance}</td>
-                      <td className="border p-2">KES {r.availableLoan}</td>
+                      <td className="border p-2">KES {r.availableLoan || 0}</td>
                     </tr>
                   );
                 })}
@@ -200,37 +223,31 @@ export default function WardenDashboard() {
         {/* ---------- FINANCE ---------- */}
         <section id="finance" className="bg-white p-6 rounded-2xl shadow">
           <h2 className="text-xl font-bold mb-4">Finance Overview</h2>
-
           {hostels.map((hostel) => {
             const hostelResidents = residents.filter(
-              (r) => r.hostelId === hostel._id
+              (r) =>
+                r.hostel === hostel._id ||
+                (typeof r.hostel === "object" && r.hostel._id === hostel._id)
             );
-
             const totalExpected = hostelResidents.reduce(
               (acc, r) => acc + calculateTotalAmount(r),
               0
             );
             const totalPaid = hostelResidents.reduce(
-              (acc, r) => acc + r.amountPaid,
+              (acc, r) => acc + (r.amountPaid || 0),
               0
             );
-
             return (
               <div key={hostel._id} className="bg-gray-50 p-4 rounded-2xl mb-4">
                 <h3 className="font-semibold">{hostel.name}</h3>
                 <p>Total Expected: KES {totalExpected}</p>
                 <p>Total Paid: KES {totalPaid}</p>
                 <p>Total Remaining: KES {totalExpected - totalPaid}</p>
-
                 <div className="w-full bg-gray-200 h-4 rounded-full mt-2">
                   <div
                     className="bg-green-600 h-4 rounded-full"
                     style={{
-                      width: `${
-                        totalExpected
-                          ? (totalPaid / totalExpected) * 100
-                          : 0
-                      }%`,
+                      width: `${totalExpected ? (totalPaid / totalExpected) * 100 : 0}%`,
                     }}
                   />
                 </div>
@@ -242,7 +259,6 @@ export default function WardenDashboard() {
         {/* ---------- PROFILE ---------- */}
         <section id="profile" className="bg-white p-6 rounded-2xl shadow">
           <h2 className="text-xl font-bold mb-4">Profile</h2>
-
           <form
             onSubmit={handleProfileUpdate}
             className="grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -260,11 +276,10 @@ export default function WardenDashboard() {
             />
             <input
               name="contact"
-              value={warden.contact}
+              value={warden.contact || ""}
               onChange={handleProfileChange}
               className="border p-3 rounded-xl"
             />
-
             <div className="md:col-span-2">
               {profilePhoto && (
                 <img
@@ -275,7 +290,6 @@ export default function WardenDashboard() {
               )}
               <input type="file" onChange={handlePhotoChange} />
             </div>
-
             <button className="md:col-span-2 bg-black text-white py-3 rounded-xl">
               Update Profile
             </button>

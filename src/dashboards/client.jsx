@@ -3,7 +3,7 @@ import api from "../api/axios";
 
 export default function ClientDashboard() {
   const [user, setUser] = useState(null);
-  const [booking, setBooking] = useState(null);
+  const [hostel, setHostel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -11,15 +11,19 @@ export default function ClientDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [userRes, bookingRes] = await Promise.all([
-          api.get("/residents/me").catch(() => null),
-          api.get("/bookings/my-booking").catch(() => null),
-        ]);
+        const userRes = await api.get("/residents/me");
+        const resident = userRes.data;
+        setUser(resident);
 
-        setUser(userRes?.data || {}); // fallback to empty object
-        setBooking(bookingRes?.data || null); // null if no booking
+        if (resident.hostel) {
+          const hostelId =
+            typeof resident.hostel === "object" ? resident.hostel._id : resident.hostel;
+          const hostelRes = await api.get(`/hostels/${hostelId}`);
+          setHostel(hostelRes.data);
+        }
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load dashboard data");
+        console.error("Dashboard fetch error:", err);
+        setError(err.response?.data?.message || "Failed to load dashboard data.");
       } finally {
         setLoading(false);
       }
@@ -29,25 +33,23 @@ export default function ClientDashboard() {
   }, []);
 
   // ================= LOADING / ERROR =================
-  if (loading) {
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Loading dashboard...</p>
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-red-600">{error}</p>
       </div>
     );
-  }
 
-  // ================= SAFE FINANCE CALCULATIONS =================
-  const checkIn = booking?.checkIn ? new Date(booking.checkIn) : null;
-  const checkOut = booking?.checkOut ? new Date(booking.checkOut) : null;
+  // ================= DATE & FINANCE =================
+  const checkIn = user?.checkIn ? new Date(user.checkIn) : null;
+  const checkOut = user?.checkOut ? new Date(user.checkOut) : null;
 
   const months =
     checkIn && checkOut
@@ -56,10 +58,12 @@ export default function ClientDashboard() {
         1
       : 0;
 
-  const totalPayable = months * (booking?.pricePerMonth || 0);
-  const balance = totalPayable - (booking?.amountPaid || 0);
+  const monthlyRent = hostel?.monthlyPayment || 0;
+  const totalPayable = months * monthlyRent;
+  const paid = user?.amountPaid || 0;
+  const balance = totalPayable - paid;
 
-  // ================= HANDLERS =================
+  // ================= PROFILE =================
   const handleProfileChange = (e) =>
     setUser({ ...user, [e.target.name]: e.target.value });
 
@@ -113,26 +117,36 @@ export default function ClientDashboard() {
       <main className="flex-1 p-6 space-y-8">
         {/* ---------- WELCOME ---------- */}
         <section className="bg-white rounded-2xl p-6 shadow">
-          <h1 className="text-2xl font-bold">Welcome back, {user?.name || "Resident"}</h1>
+          <h1 className="text-2xl font-bold">
+            Welcome back, {user?.name || "Resident"}
+          </h1>
           <p className="text-gray-600 mt-1">
             Here is a summary of your stay and finances
           </p>
         </section>
 
         {/* ---------- QUICK STATS ---------- */}
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[ 
-            { label: "Monthly Rent", value: `KES ${booking?.pricePerMonth || 0}` },
-            { label: "Total Payable", value: `KES ${totalPayable}` },
-            { label: "Paid", value: `KES ${booking?.amountPaid || 0}` },
-            { label: "Balance", value: `KES ${balance}` },
+        <section className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {[
+            { label: "Monthly Rent", value: `KES ${monthlyRent}`, color: "gray" },
+            { label: "Months Stay", value: months, color: "gray" },
+            { label: "Total Payable", value: `KES ${totalPayable}`, color: "gray" },
+            { label: "Paid", value: `KES ${paid}`, color: paid > 0 ? "green" : "red" },
+            { label: "Balance", value: `KES ${balance}`, color: balance > 0 ? "red" : "green" },
           ].map((item) => (
-            <div
-              key={item.label}
-              className="bg-white p-5 rounded-2xl shadow text-center"
-            >
+            <div key={item.label} className="bg-white p-5 rounded-2xl shadow text-center">
               <p className="text-gray-500 text-sm">{item.label}</p>
-              <p className="font-bold text-lg mt-1">{item.value}</p>
+              <p
+                className={`font-bold text-lg mt-1 ${
+                  item.color === "green"
+                    ? "text-green-600"
+                    : item.color === "red"
+                    ? "text-red-600"
+                    : "text-gray-800"
+                }`}
+              >
+                {item.value}
+              </p>
             </div>
           ))}
         </section>
@@ -141,30 +155,27 @@ export default function ClientDashboard() {
         <section id="myhostel" className="bg-white rounded-2xl shadow p-6">
           <h2 className="text-xl font-bold mb-4">My Hostel</h2>
 
-          {booking ? (
+          {hostel ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <img
-                src={booking?.image || "/placeholder.jpg"}
-                alt="Hostel"
+                src={hostel.imageUrl || "/placeholder.jpg"}
+                alt={hostel.name}
                 className="rounded-xl h-60 w-full object-cover"
               />
 
               <div className="space-y-2">
-                <h3 className="text-lg font-semibold">{booking?.hostelName || "— Not Assigned —"}</h3>
-                <p className="text-gray-600">{booking?.location || "—"}</p>
-
+                <h3 className="text-lg font-semibold">{hostel.name}</h3>
+                <p className="text-gray-600">{hostel.location || "—"}</p>
                 <p>
-                  Room: <strong>{booking?.roomType || "—"}</strong> —{" "}
-                  {booking?.roomNumber || "—"} / Bed {booking?.bedNumber || "—"}
+                  Room: <strong>{user?.roomType || hostel.roomType || "—"}</strong> — {user?.roomNumber || "—"} / Bed {user?.bedNumber || "—"}
                 </p>
-
                 <p>
-                  Stay: {booking?.checkIn || "—"} → {booking?.checkOut || "—"}
+                  Stay: {checkIn ? checkIn.toLocaleDateString() : "—"} → {checkOut ? checkOut.toLocaleDateString() : "—"}
                 </p>
 
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {booking?.amenities?.length > 0
-                    ? booking.amenities.map((a) => (
+                  {hostel.amenities?.length > 0
+                    ? hostel.amenities.map((a) => (
                         <span
                           key={a}
                           className="px-3 py-1 bg-slate-100 rounded-full text-sm"
@@ -177,28 +188,22 @@ export default function ClientDashboard() {
 
                 <span
                   className={`inline-block mt-3 px-4 py-1 rounded-full text-white text-sm ${
-                    booking?.status === "Confirmed"
-                      ? "bg-green-600"
-                      : "bg-yellow-500"
+                    user?.status === "active" ? "bg-green-600" : "bg-gray-500"
                   }`}
                 >
-                  {booking?.status || "Pending"}
+                  {user?.status || "Inactive"}
                 </span>
               </div>
             </div>
           ) : (
-            <p className="text-gray-500">No booking information available yet.</p>
+            <p className="text-gray-500">No hostel assigned yet.</p>
           )}
         </section>
 
         {/* ---------- PROFILE ---------- */}
         <section id="profile" className="bg-white rounded-2xl shadow p-6">
           <h2 className="text-xl font-bold mb-4">Profile</h2>
-
-          <form
-            onSubmit={handleProfileSubmit}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
+          <form onSubmit={handleProfileSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               name="name"
               value={user?.name || ""}
@@ -212,9 +217,9 @@ export default function ClientDashboard() {
               onChange={handleProfileChange}
               className="border p-3 rounded-xl"
             >
+              <option>Other</option>
               <option>Male</option>
               <option>Female</option>
-              <option>Other</option>
             </select>
 
             <input

@@ -80,7 +80,7 @@ export default function ManageResidents() {
                 <tr>
                   <th className="p-2">Name</th>
                   <th className="p-2">Hostel</th>
-                  <th className="p-2">Room</th>
+                  <th className="p-2">Room / Bed</th>
                   <th className="p-2">Status</th>
                   <th className="p-2">Check-In</th>
                   <th className="p-2">Check-Out</th>
@@ -92,26 +92,26 @@ export default function ManageResidents() {
                   <tr key={r._id} className="text-center border-t">
                     <td className="p-2">{r.name}</td>
                     <td className="p-2">{r.hostel?.name || "—"}</td>
-                    <td className="p-2">{r.roomNumber || "—"}</td>
+                    <td className="p-2">
+                      {r.roomNumber || "—"} / {r.bedNumber || "—"}
+                    </td>
                     <td className="p-2">
                       <span
                         className={`px-3 py-1 rounded-full text-white text-sm ${
-                          r.status === "active"
-                            ? "bg-green-500"
-                            : "bg-gray-500"
+                          r.status === "active" ? "bg-green-500" : "bg-gray-500"
                         }`}
                       >
-                        {r.status}
+                        {r.status || "Inactive"}
                       </span>
                     </td>
                     <td className="p-2">
-                      {r.checkInDate
-                        ? new Date(r.checkInDate).toLocaleDateString()
+                      {r.checkIn
+                        ? new Date(r.checkIn).toLocaleDateString()
                         : "—"}
                     </td>
                     <td className="p-2">
-                      {r.checkOutDate
-                        ? new Date(r.checkOutDate).toLocaleDateString()
+                      {r.checkOut
+                        ? new Date(r.checkOut).toLocaleDateString()
                         : "—"}
                     </td>
                     <td className="p-2 space-x-2">
