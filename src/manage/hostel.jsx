@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api/axios"; // Use your axios instance with JWT
 import AddOrUpdateHostel from "../Forms/hostelform";
 
 export default function ManageHostels() {
   const [hostels, setHostels] = useState([]);
   const [editingHostel, setEditingHostel] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [wardens, setWardens] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // ---------------- FETCH DATA ----------------
@@ -14,14 +13,11 @@ export default function ManageHostels() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Fetch hostels (should return assignedWarden populated)
-        const resHostels = await axios.get("http://localhost:4000/api/hostels");
-        const resWardens = await axios.get("http://localhost:4000/api/wardens");
-
-        setHostels(resHostels.data); // assignedWarden already includes .user
-        setWardens(resWardens.data);
+        // Backend should populate assignedWarden.user
+        const resHostels = await api.get("/hostels");
+        setHostels(resHostels.data);
       } catch (err) {
-        console.error("Error fetching data:", err);
+        console.error("Error fetching hostels:", err);
       } finally {
         setLoading(false);
       }
@@ -30,7 +26,8 @@ export default function ManageHostels() {
   }, []);
 
   // ---------------- HELPERS ----------------
-  const getWardenName = (assignedWarden) => assignedWarden?.user?.name || "Unassigned";
+  const getWardenName = (assignedWarden) =>
+    assignedWarden?.user?.name || "Unassigned";
 
   // ---------------- HANDLE SAVE ----------------
   const handleSave = (hostel) => {
@@ -50,7 +47,7 @@ export default function ManageHostels() {
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this hostel?")) return;
     try {
-      await axios.delete(`http://localhost:4000/api/hostels/${id}`);
+      await api.delete(`/hostels/${id}`);
       setHostels(prev => prev.filter(h => h._id !== id));
     } catch (err) {
       console.error("Failed to delete hostel:", err);
@@ -63,7 +60,7 @@ export default function ManageHostels() {
     if (!hostel) return;
     const updatedStatus = hostel.status === "active" ? "inactive" : "active";
     try {
-      const res = await axios.patch(`http://localhost:4000/api/hostels/${id}`, { status: updatedStatus });
+      const res = await api.patch(`/hostels/${id}`, { status: updatedStatus });
       setHostels(prev =>
         prev.map(h => (h._id === id ? { ...h, status: res.data.status } : h))
       );
@@ -78,7 +75,6 @@ export default function ManageHostels() {
     <div className="min-h-screen bg-gray-100 p-6">
       {!showForm ? (
         <>
-          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Manage Hostels</h1>
             <button
@@ -89,7 +85,6 @@ export default function ManageHostels() {
             </button>
           </div>
 
-          {/* Table */}
           <div className="overflow-x-auto bg-white rounded-2xl shadow p-4">
             <table className="w-full table-auto">
               <thead className="bg-gray-100">
@@ -149,7 +144,6 @@ export default function ManageHostels() {
       ) : (
         <AddOrUpdateHostel
           hostelData={editingHostel}
-          wardens={wardens}
           onSubmit={handleSave}
           onCancel={() => { setShowForm(false); setEditingHostel(null); }}
         />

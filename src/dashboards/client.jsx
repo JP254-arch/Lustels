@@ -6,18 +6,18 @@ export default function ClientDashboard() {
   const [hostel, setHostel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // ================= FETCH DATA =================
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const userRes = await api.get("/residents/me");
-        const resident = userRes.data;
+        const res = await api.get("/auth/me"); // fetch current user (admin or resident)
+        const resident = res.data.user;
         setUser(resident);
 
-        if (resident.hostel) {
-          const hostelId =
-            typeof resident.hostel === "object" ? resident.hostel._id : resident.hostel;
+        if (resident.residentProfile?.hostel?._id) {
+          const hostelId = resident.residentProfile.hostel._id;
           const hostelRes = await api.get(`/hostels/${hostelId}`);
           setHostel(hostelRes.data);
         }
@@ -48,8 +48,8 @@ export default function ClientDashboard() {
     );
 
   // ================= DATE & FINANCE =================
-  const checkIn = user?.checkIn ? new Date(user.checkIn) : null;
-  const checkOut = user?.checkOut ? new Date(user.checkOut) : null;
+  const checkIn = user?.residentProfile?.checkIn ? new Date(user.residentProfile.checkIn) : null;
+  const checkOut = user?.residentProfile?.checkOut ? new Date(user.residentProfile.checkOut) : null;
 
   const months =
     checkIn && checkOut
@@ -60,25 +60,29 @@ export default function ClientDashboard() {
 
   const monthlyRent = hostel?.monthlyPayment || 0;
   const totalPayable = months * monthlyRent;
-  const paid = user?.amountPaid || 0;
+  const paid = user?.residentProfile?.amountPaid || 0;
   const balance = totalPayable - paid;
 
-  // ================= PROFILE =================
+  // ================= PROFILE HANDLERS =================
   const handleProfileChange = (e) =>
     setUser({ ...user, [e.target.name]: e.target.value });
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
     try {
-      await api.put("/residents/me", {
+      const updateRes = await api.put("/auth/me", {
         name: user.name,
-        gender: user.gender,
         email: user.email,
         contact: user.contact,
       });
+      setUser(updateRes.data.user);
       alert("Profile updated successfully");
-    } catch {
-      alert("Failed to update profile");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to update profile");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -167,7 +171,7 @@ export default function ClientDashboard() {
                 <h3 className="text-lg font-semibold">{hostel.name}</h3>
                 <p className="text-gray-600">{hostel.location || "—"}</p>
                 <p>
-                  Room: <strong>{user?.roomType || hostel.roomType || "—"}</strong> — {user?.roomNumber || "—"} / Bed {user?.bedNumber || "—"}
+                  Room: <strong>{user?.residentProfile?.roomType || "—"}</strong> — {user?.residentProfile?.roomNumber || "—"} / Bed {user?.residentProfile?.bedNumber || "—"}
                 </p>
                 <p>
                   Stay: {checkIn ? checkIn.toLocaleDateString() : "—"} → {checkOut ? checkOut.toLocaleDateString() : "—"}
@@ -176,22 +180,17 @@ export default function ClientDashboard() {
                 <div className="flex flex-wrap gap-2 mt-2">
                   {hostel.amenities?.length > 0
                     ? hostel.amenities.map((a) => (
-                        <span
-                          key={a}
-                          className="px-3 py-1 bg-slate-100 rounded-full text-sm"
-                        >
-                          {a}
-                        </span>
+                        <span key={a} className="px-3 py-1 bg-slate-100 rounded-full text-sm">{a}</span>
                       ))
                     : "No amenities assigned"}
                 </div>
 
                 <span
                   className={`inline-block mt-3 px-4 py-1 rounded-full text-white text-sm ${
-                    user?.status === "active" ? "bg-green-600" : "bg-gray-500"
+                    user?.residentProfile?.status === "active" ? "bg-green-600" : "bg-gray-500"
                   }`}
                 >
-                  {user?.status || "Inactive"}
+                  {user?.residentProfile?.status || "Inactive"}
                 </span>
               </div>
             </div>
@@ -211,17 +210,6 @@ export default function ClientDashboard() {
               className="border p-3 rounded-xl"
               placeholder="Name"
             />
-            <select
-              name="gender"
-              value={user?.gender || ""}
-              onChange={handleProfileChange}
-              className="border p-3 rounded-xl"
-            >
-              <option>Other</option>
-              <option>Male</option>
-              <option>Female</option>
-            </select>
-
             <input
               name="email"
               value={user?.email || ""}
@@ -237,8 +225,11 @@ export default function ClientDashboard() {
               placeholder="Contact"
             />
 
-            <button className="md:col-span-2 bg-black text-white py-3 rounded-xl">
-              Update Profile
+            <button
+              disabled={saving}
+              className="md:col-span-2 bg-black text-white py-3 rounded-xl disabled:opacity-60"
+            >
+              {saving ? "Updating..." : "Update Profile"}
             </button>
           </form>
         </section>

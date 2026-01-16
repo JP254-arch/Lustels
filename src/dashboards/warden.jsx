@@ -102,14 +102,20 @@ export default function WardenDashboard() {
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     try {
-      await api.put("/wardens/me", {
+      const updated = await api.put("/wardens/me", {
         email: warden.email,
         contact: warden.contact,
         profilePhoto,
       });
+
+      // Update local state with backend response
+      setWarden(updated.data);
+      setProfilePhoto(updated.data.profilePhoto || "");
+
       alert("Profile updated successfully");
-    } catch {
-      alert("Failed to update profile");
+    } catch (err) {
+      console.error("Profile update error:", err);
+      alert(err.response?.data?.message || "Failed to update profile");
     }
   };
 
@@ -117,7 +123,20 @@ export default function WardenDashboard() {
     <div className="flex min-h-screen">
       {/* ================= SIDEBAR ================= */}
       <aside className="w-64 bg-gray-800 text-white p-6 flex flex-col">
-        <h2 className="text-xl font-bold mb-6">Warden Dashboard</h2>
+        <div className="flex items-center mb-6">
+          {profilePhoto ? (
+            <img
+              src={profilePhoto}
+              alt="Profile"
+              className="w-12 h-12 rounded-full mr-3 object-cover"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full mr-3 bg-gray-500 flex items-center justify-center">
+              {warden.name?.[0].toUpperCase() || "W"}
+            </div>
+          )}
+          <span className="font-semibold">{warden.name}</span>
+        </div>
         <nav className="flex flex-col gap-4">
           {["Home", "My Hostels", "Residents", "Finance", "Notifications", "Profile"].map(
             (item) => (
@@ -132,7 +151,7 @@ export default function WardenDashboard() {
           )}
           <a
             href="#"
-            className="hover:bg-gray-700 p-2 rounded"
+            className="bg-red-600 hover:bg-red-800 text-white p-2 rounded"
             onClick={() => {
               localStorage.removeItem("token");
               window.location.reload();
@@ -140,6 +159,7 @@ export default function WardenDashboard() {
           >
             Logout
           </a>
+
         </nav>
       </aside>
 
@@ -160,7 +180,7 @@ export default function WardenDashboard() {
             {hostels.map((hostel) => (
               <div key={hostel._id} className="bg-gray-50 p-4 rounded-2xl shadow">
                 <img
-                  src={hostel.image || "/placeholder.jpg"}
+                  src={hostel.imageUrl}
                   alt={hostel.name}
                   className="rounded-xl w-full h-48 object-cover mb-4"
                 />
@@ -264,17 +284,20 @@ export default function WardenDashboard() {
             className="grid grid-cols-1 md:grid-cols-2 gap-4"
           >
             <input
+              placeholder="your new name🤓"
               value={warden.name}
               readOnly
               className="border p-3 rounded-xl bg-gray-100"
             />
             <input
+              placeholder="your new email📩"
               name="email"
               value={warden.email}
               onChange={handleProfileChange}
               className="border p-3 rounded-xl"
             />
             <input
+              placeholder="your new contact📞"
               name="contact"
               value={warden.contact || ""}
               onChange={handleProfileChange}

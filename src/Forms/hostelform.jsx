@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api/axios"; // Auth-enabled Axios instance
 
 export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
   const initialState = {
@@ -21,7 +21,7 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
   const [formData, setFormData] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(""); // For success message
+  const [success, setSuccess] = useState("");
   const [wardens, setWardens] = useState([]);
   const [wardensLoading, setWardensLoading] = useState(true);
   const [wardensError, setWardensError] = useState("");
@@ -41,7 +41,7 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     const fetchWardens = async () => {
       try {
         setWardensLoading(true);
-        const res = await axios.get("http://localhost:4000/api/wardens");
+        const res = await api.get("/wardens"); // Auth token included
         setWardens(res.data);
       } catch (err) {
         console.error(err);
@@ -56,7 +56,6 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
   // ---------------- POPULATE FORM IF EDITING ----------------
   useEffect(() => {
     if (hostelData) {
-      // Ensure assignedWarden is the _id
       setFormData({
         ...initialState,
         ...hostelData,
@@ -69,7 +68,7 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value || null, // convert empty string to null
+      [name]: value || null,
     }));
   };
 
@@ -101,13 +100,10 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
       let res;
       if (hostelData?._id) {
         // UPDATE
-        res = await axios.put(
-          `http://localhost:4000/api/hostels/${hostelData._id}`,
-          payload
-        );
+        res = await api.put(`/hostels/${hostelData._id}`, payload);
       } else {
         // ADD NEW
-        res = await axios.post("http://localhost:4000/api/hostels", payload);
+        res = await api.post("/hostels", payload);
       }
 
       setSuccess(hostelData ? "Hostel updated successfully!" : "Hostel added successfully!");
@@ -116,7 +112,7 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error(err);
-      setError("Failed to save hostel. Please try again.");
+      setError(err.response?.data?.message || "Failed to save hostel");
     } finally {
       setLoading(false);
     }
@@ -282,7 +278,6 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 <option value="">Gender Policy</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
-                <option value="mixed">Mixed</option>
               </select>
 
               {/* Wardens */}
@@ -297,12 +292,12 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                   {wardensLoading
                     ? "Loading wardens..."
                     : wardensError
-                    ? "Failed to load wardens"
+                    ? wardensError
                     : "Assign Warden"}
                 </option>
                 {wardens.map((warden) => (
                   <option key={warden._id} value={warden._id}>
-                    {warden.name}
+                    {warden.user?.name || warden.name || "Unnamed"}
                   </option>
                 ))}
               </select>

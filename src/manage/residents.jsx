@@ -8,31 +8,40 @@ export default function ManageResidents() {
   const [showForm, setShowForm] = useState(false);
   const [hostels, setHostels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  /* ================= FETCH DATA ================= */
+  // ================= FETCH DATA =================
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [resResidents, resHostels] = await Promise.all([
+        api.get("/residents"), // Protected route; token needed
+        api.get("/hostels"),
+      ]);
+
+      // Ensure resident list is fully populated
+      setResidents(
+        resResidents.data.map((r) => ({
+          ...r,
+          hostel: r.hostel || null,
+        }))
+      );
+      setHostels(resHostels.data);
+    } catch (err) {
+      console.error("Failed to fetch residents:", err);
+      setError(err.response?.data?.message || "Failed to load data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        const [resResidents, resHostels] = await Promise.all([
-          api.get("/residents"),
-          api.get("/hostels"),
-        ]);
-
-        setResidents(resResidents.data);
-        setHostels(resHostels.data);
-      } catch (err) {
-        console.error("Failed to fetch residents:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
-  /* ================= HANDLE SAVE ================= */
+  // ================= HANDLE SAVE (CREATE / UPDATE) =================
   const handleSave = (resident) => {
     const exists = residents.find((r) => r._id === resident._id);
     if (exists) {
@@ -46,7 +55,7 @@ export default function ManageResidents() {
     setEditingResident(null);
   };
 
-  /* ================= HANDLE DELETE ================= */
+  // ================= HANDLE DELETE =================
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this resident?")) return;
 
@@ -55,11 +64,18 @@ export default function ManageResidents() {
       setResidents((prev) => prev.filter((r) => r._id !== id));
     } catch (err) {
       console.error("Failed to delete resident:", err);
+      alert(err.response?.data?.message || "Failed to delete resident");
     }
   };
 
-  if (loading) return <p className="p-6 text-center">Loading data...</p>;
+  // ================= LOADING / ERROR =================
+  if (loading)
+    return <p className="p-6 text-center">Loading data...</p>;
 
+  if (error)
+    return <p className="p-6 text-center text-red-600">{error}</p>;
+
+  // ================= UI =================
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       {!showForm ? (
