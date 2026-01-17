@@ -15,9 +15,9 @@ import WardenDashboard from "./dashboards/warden";
 import ClientDashboard from "./dashboards/client";
 
 // Forms
-import HostelForm from "./Forms/hostelform"; // Add or Update Hostel
-import WardenForm from "./Forms/Wardenform"; // Add or Update Warden
-import ResidentForm from "./Forms/residentform"; // Add or Update Resident
+import HostelForm from "./Forms/hostelform";
+import WardenForm from "./Forms/Wardenform";
+import ResidentForm from "./Forms/residentform";
 
 // Management Pages
 import WardenManagement from "./manage/warden";
@@ -26,39 +26,47 @@ import ClientManagement from "./manage/residents";
 
 // Layout
 import Layout from "./layout/layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Wrap pages with Layout for consistent Navbar & Footer */}
         <Route element={<Layout />}>
-          {/* Public Pages */}
+          {/* Public */}
           <Route path="/" element={<Homepage />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/hostels" element={<Hostels />} />
           <Route path="/hostels/:id" element={<HostelDetails />} />
 
-          {/* Dashboards */}
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/warden" element={<WardenDashboard />} />
-          <Route path="/resident" element={<ClientDashboard />} />
+          {/* Auth pages (blocked when logged in) */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-          {/* Forms */}
-          <Route path="/hostel-form" element={<HostelForm />} />
-          <Route path="/warden-form" element={<WardenForm />} />
-          <Route path="/resident-form" element={<ResidentForm />} />
+          {/* ADMIN */}
+          <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/manage-hostels" element={<HostelManagement />} />
+            <Route path="/manage-wardens" element={<WardenManagement />} />
+            <Route path="/manage-clients" element={<ClientManagement />} />
+            <Route path="/warden-form" element={<WardenForm />} />
+            <Route path="/hostel-form" element={<HostelForm />} />
+          </Route>
 
-          {/* Management Pages */}
-          <Route path="/manage-hostels" element={<HostelManagement />} />
-          <Route path="/manage-wardens" element={<WardenManagement />} />
-          <Route path="/manage-clients" element={<ClientManagement />} />
+          {/* WARDEN */}
+          <Route element={<ProtectedRoute allowedRoles={["warden"]} />}>
+            <Route path="/warden" element={<WardenDashboard />} />
+          </Route>
+
+          {/* RESIDENT */}
+          <Route element={<ProtectedRoute allowedRoles={["resident"]} />}>
+            <Route path="/resident" element={<ClientDashboard />} />
+            <Route path="/resident-form" element={<ResidentForm />} />
+          </Route>
         </Route>
 
-        {/* Fallback */}
+        {/* 404 */}
         <Route
           path="*"
           element={

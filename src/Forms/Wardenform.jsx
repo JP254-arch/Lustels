@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import api from "../api/axios"; // token-aware axios instance
 
 export default function WardenForm({ wardenData = null, onSuccess }) {
-  const [warden, setWarden] = useState({
+  const [form, setForm] = useState({
     name: "",
     email: "",
-    assignedHostels: [],
+    password: "",
     phone: "",
     gender: "",
     dob: "",
+    assignedHostels: [],
   });
 
   const [hostels, setHostels] = useState([]);
@@ -25,7 +26,6 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
   useEffect(() => {
     const fetchHostels = async () => {
       try {
-        setLoadingHostels(true);
         const res = await api.get("/hostels");
         setHostels(res.data);
       } catch (err) {
@@ -41,15 +41,14 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
   // ---------------- PREFILL FOR EDIT ----------------
   useEffect(() => {
     if (wardenData) {
-      setWarden({
+      setForm({
         name: wardenData.user?.name || "",
         email: wardenData.user?.email || "",
-        assignedHostels: wardenData.assignedHostels
-          ? wardenData.assignedHostels.map((h) => h._id)
-          : [],
         phone: wardenData.phone || "",
         gender: wardenData.gender || "",
         dob: wardenData.dob ? wardenData.dob.split("T")[0] : "",
+        assignedHostels: wardenData.assignedHostels?.map((h) => h._id) || [],
+        password: "", // never prefill password
       });
     }
   }, [wardenData]);
@@ -61,13 +60,13 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
       const selected = Array.from(options)
         .filter((o) => o.selected)
         .map((o) => o.value);
-      setWarden((prev) => ({ ...prev, assignedHostels: selected }));
+      setForm((prev) => ({ ...prev, assignedHostels: selected }));
     } else {
-      setWarden((prev) => ({ ...prev, [name]: value }));
+      setForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  // ---------------- TOAST HELPER ----------------
+  // ---------------- TOAST ----------------
   const showToast = (message) => {
     setToast({ message, visible: true });
     navigator.clipboard.writeText(message);
@@ -81,30 +80,42 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
     setError("");
     setSuccess("");
 
-    if (!warden.assignedHostels.length) {
+    if (!form.assignedHostels.length) {
       setError("Please select at least one hostel");
       setSubmitLoading(false);
       return;
     }
 
-    const payload = { ...warden, assignedHostels: warden.assignedHostels };
+    if (!wardenData && !form.password) {
+      setError("Password is required for new warden");
+      setSubmitLoading(false);
+      return;
+    }
+
+    const payload = { ...form };
 
     try {
       let res;
 
       if (wardenData?._id) {
-        // UPDATE existing warden
+        // Update existing warden
+        // Remove password if blank
+        if (!payload.password) delete payload.password;
+
         res = await api.put(`/wardens/${wardenData._id}`, payload);
-        setSuccess("Warden updated successfully!");
+
+        // If password provided, update it separately
+        if (form.password) {
+          await api.put(`/wardens/${wardenData._id}/password`, { password: form.password });
+          setSuccess("Warden updated and password changed successfully!");
+        } else {
+          setSuccess("Warden updated successfully!");
+        }
       } else {
-        // CREATE new warden
+        // Create new warden
         res = await api.post("/wardens", payload);
-
-        // Store JWT returned by backend
-        if (res.data.token) localStorage.setItem("token", res.data.token);
-
         setSuccess("Warden added successfully!");
-        showToast(res.data.temporaryPassword);
+        if (res.data.temporaryPassword) showToast(res.data.temporaryPassword);
       }
 
       if (onSuccess) onSuccess(res.data);
@@ -113,13 +124,12 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
       setError(err.response?.data?.message || "Failed to save warden");
     } finally {
       setSubmitLoading(false);
-      setTimeout(() => setSuccess(""), 4000);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-md mx-auto bg-white rounded-2xl shadow-lg p-6">
+    <div className="min-h-screen bg-gray-100 p-6 flex justify-center">
+      <div className="max-w-md w-full bg-white p-6 rounded-2xl shadow-lg">
         <h1 className="text-2xl font-bold mb-6">
           {wardenData ? "Update Warden" : "Add New Warden"}
         </h1>
@@ -127,30 +137,37 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
         {error && <p className="text-red-500 mb-2">{error}</p>}
         {success && <p className="text-green-500 mb-2">{success}</p>}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             name="name"
-            value={warden.name}
+            value={form.name}
             onChange={handleChange}
             placeholder="Full Name"
             className="border p-3 rounded-xl w-full"
             required
           />
-
           <input
             type="email"
             name="email"
-            value={warden.email}
+            value={form.email}
             onChange={handleChange}
             placeholder="Email"
             className="border p-3 rounded-xl w-full"
             required
           />
+          <input
+            type="password"
+            name="password"
+            value={form.password}
+            onChange={handleChange}
+            placeholder={wardenData ? "New Password (optional)" : "Password"}
+            className="border p-3 rounded-xl w-full"
+            required={!wardenData}
+          />
 
-          {/* Multi-select Hostels Dropdown */}
           <select
             name="assignedHostels"
-            value={warden.assignedHostels}
+            value={form.assignedHostels}
             onChange={handleChange}
             className="border p-3 rounded-xl w-full"
             multiple
@@ -158,8 +175,6 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
             disabled={loadingHostels || !!hostelError}
             required
           >
-            {loadingHostels && <option>Loading hostels...</option>}
-            {hostelError && <option>{hostelError}</option>}
             {hostels.map((h) => (
               <option key={h._id} value={h._id}>
                 {h.name} ({h.location || "No location"})
@@ -169,7 +184,7 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
 
           <input
             name="phone"
-            value={warden.phone}
+            value={form.phone}
             onChange={handleChange}
             placeholder="Phone Number"
             className="border p-3 rounded-xl w-full"
@@ -177,7 +192,7 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
 
           <select
             name="gender"
-            value={warden.gender}
+            value={form.gender}
             onChange={handleChange}
             className="border p-3 rounded-xl w-full"
             required
@@ -193,7 +208,7 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
           <input
             type="date"
             name="dob"
-            value={warden.dob}
+            value={form.dob}
             onChange={handleChange}
             className="border p-3 rounded-xl w-full"
           />
@@ -203,22 +218,14 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
             disabled={submitLoading}
             className="bg-orange-900 text-white px-5 py-3 rounded-xl w-full hover:bg-orange-800 transition font-semibold disabled:opacity-50"
           >
-            {submitLoading
-              ? wardenData
-                ? "Updating..."
-                : "Adding..."
-              : wardenData
-              ? "Update Warden"
-              : "Add Warden"}
+            {submitLoading ? (wardenData ? "Updating..." : "Adding...") : wardenData ? "Update Warden" : "Add Warden"}
           </button>
         </form>
       </div>
 
-      {/* ---------------- TOAST ---------------- */}
+      {/* Toast */}
       {toast.visible && (
-        <div
-          className="fixed top-6 right-6 bg-yellow-400 text-black px-5 py-3 rounded-lg shadow-lg font-semibold z-50 animate-slide-in"
-        >
+        <div className="fixed top-6 right-6 bg-yellow-400 text-black px-5 py-3 rounded-lg shadow-lg font-semibold z-50 animate-slide-in">
           Temporary Password: {toast.message} (Copied!)
         </div>
       )}
