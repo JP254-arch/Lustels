@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUserTie,
+  faMapMarkerAlt,
+  faCoins,
+  faHouseChimney,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function Hostels() {
   const [hostels, setHostels] = useState([]);
@@ -20,13 +27,11 @@ export default function Hostels() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  const getWardenName = (assignedWarden) => {
-    return assignedWarden?.user?.name || "Unassigned";
-  };
+  const getWardenName = (assignedWarden) =>
+    assignedWarden?.user?.name || "Unassigned";
 
   if (loading)
     return (
@@ -45,7 +50,7 @@ export default function Hostels() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto mb-6">
-        <h1 className="text-2xl font-bold">Available Hostels</h1>
+        <h1 className="text-2xl font-bold"> <FontAwesomeIcon icon={faHouseChimney} />Available Hostels</h1>
         <p className="text-gray-600 text-sm">
           Browse verified hostels and choose the best option for you
         </p>
@@ -71,16 +76,24 @@ export default function Hostels() {
                     {hostel.genderPolicy}
                   </span>
                 </div>
-                <p className="text-gray-600 text-sm">{hostel.location}</p>
-                <p className="text-sm text-gray-500 capitalize">
-                  {hostel.roomType} room · {hostel.totalRooms} rooms
-                </p>
-                <p className="text-sm text-gray-500">
-                  Warden:{" "}
-                  <span className="font-medium">
-                    {getWardenName(hostel.assignedWarden)}
+
+                <div className="flex items-center gap-2 text-gray-600 text-sm">
+                  <FontAwesomeIcon icon={faMapMarkerAlt} />
+                  <span>{hostel.location}</span>
+                </div>
+
+                <div className="flex items-center gap-2 text-gray-500 text-sm capitalize">
+                  <FontAwesomeIcon icon={faHouseChimney} />
+                  <span>
+                    {hostel.roomType} room · {hostel.totalRooms} rooms
                   </span>
-                </p>
+                </div>
+
+                <div className="flex items-center gap-2 text-gray-500 text-sm">
+                  <FontAwesomeIcon icon={faUserTie} />
+                  <span>Warden: {getWardenName(hostel.assignedWarden)}</span>
+                </div>
+
                 <div className="flex flex-wrap gap-2 text-xs text-gray-600">
                   {hostel.amenities?.slice(0, 3).map((amenity) => (
                     <span key={amenity} className="bg-gray-100 px-2 py-1 rounded">
@@ -93,13 +106,18 @@ export default function Hostels() {
                     </span>
                   )}
                 </div>
-                <p className="text-lg font-bold pt-2">
-                  KES {hostel.price}
-                  <span className="text-sm font-normal text-gray-500">/ month</span>
-                </p>
+
+                <div className="flex items-center gap-2 text-lg font-bold pt-2">
+                  <FontAwesomeIcon icon={faCoins} />
+                  <span>
+                    KES {hostel.price}
+                    <span className="text-sm font-normal text-gray-500">/ month</span>
+                  </span>
+                </div>
+
                 <Link
                   to={`/hostels/${hostel._id}`}
-                  className="block text-center bg-black text-white py-2 rounded-xl hover:bg-gray-800 transition"
+                  className="mt-3 block text-center bg-black text-white py-2 rounded-xl hover:bg-gray-800 transition"
                 >
                   View Details
                 </Link>

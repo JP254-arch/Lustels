@@ -2,11 +2,20 @@ import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import BookingModal from "../components/PaymentModal";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBed,
+  faUsers,
+  faMapMarkerAlt,
+  faCoins,
+  faHome,
+  faBuilding,
+  faUserShield,
+  faKey,
+} from "@fortawesome/free-solid-svg-icons";
 
 const API_BASE = "http://localhost:4000/api";
-
-// Stripe limits for KES
-const MAX_STRIPE_AMOUNT = 999999; // = KES 999,999
+const MAX_STRIPE_AMOUNT = 999999; // KES limit
 
 export default function HostelDetails() {
   const { id } = useParams();
@@ -33,33 +42,27 @@ export default function HostelDetails() {
     fetchHostel();
   }, [id]);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Loading hostel details...</p>
       </div>
     );
-  }
 
-  if (error || !hostel) {
+  if (error || !hostel)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-red-600">{error || "Hostel not found"}</p>
       </div>
     );
-  }
 
-  // Safe conversion and total beds calculation
   const bedsPerRoom = Number(hostel.bedsPerRoom) || 0;
   const totalRooms = Number(hostel.totalRooms) || 0;
   const totalBeds = bedsPerRoom * totalRooms;
 
-  // Warden display using the exact same method as the Hostels page
-  const getWardenName = (assignedWarden) => assignedWarden?.user?.name || "Unassigned";
+  const getWardenName = (assignedWarden) =>
+    assignedWarden?.user?.name || "Unassigned";
 
-  /**
-   * CARD PAYMENT ONLY
-   */
   const handleBookingConfirm = async (bookingData) => {
     try {
       const amountInCents = bookingData.amount * 100;
@@ -93,13 +96,13 @@ export default function HostelDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow overflow-hidden">
         {/* Hostel Image */}
         <img
           src={hostel.imageUrl || "https://via.placeholder.com/800x400"}
           alt={hostel.name}
-          className="w-full h-72 object-cover"
+          className="w-full h-72 md:h-96 object-cover"
         />
 
         {/* Hostel Info */}
@@ -107,31 +110,39 @@ export default function HostelDetails() {
           <div className="flex flex-col md:flex-row md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold">{hostel.name}</h1>
-              <p className="text-gray-600">{hostel.location}</p>
+              <p className="text-gray-600 flex items-center gap-2">
+                <FontAwesomeIcon icon={faMapMarkerAlt} /> {hostel.location}
+              </p>
               <p className="text-sm text-gray-500">{hostel.address}</p>
             </div>
-            <div>
-              <p className="text-2xl font-bold">KES {hostel.price}</p>
+            <div className="text-right">
+              <p className="text-2xl font-bold flex items-center justify-end gap-1">
+                <FontAwesomeIcon icon={faCoins} />KES {hostel.price}
+              </p>
               <p className="text-sm text-gray-500">per month</p>
             </div>
           </div>
 
           <div>
-            <h2 className="font-semibold mb-2">Description</h2>
+            <h2 className="font-semibold mb-2 flex items-center gap-2">
+              <FontAwesomeIcon icon={faHome} /> Description
+            </h2>
             <p className="text-gray-700">{hostel.description}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-            <Detail label="Room Type" value={hostel.roomType} />
-            <Detail label="Gender Policy" value={hostel.genderPolicy} />
-            <Detail label="Status" value={hostel.status} />
-            <Detail label="Total Rooms" value={totalRooms} />
-            <Detail label="Beds per Room" value={bedsPerRoom} />
-            <Detail label="Total Beds" value={totalBeds} />
+            <Detail icon={faBuilding} label="Room Type" value={hostel.roomType} />
+            <Detail icon={faUsers} label="Gender Policy" value={hostel.genderPolicy} />
+            <Detail icon={faKey} label="Status" value={hostel.status} />
+            <Detail icon={faBuilding} label="Total Rooms" value={totalRooms} />
+            <Detail icon={faBed} label="Beds per Room" value={bedsPerRoom} />
+            <Detail icon={faBed} label="Total Beds" value={totalBeds} />
           </div>
 
           <div>
-            <h2 className="font-semibold mb-2">Amenities</h2>
+            <h2 className="font-semibold mb-2 flex items-center gap-2">
+              <FontAwesomeIcon icon={faUserShield} /> Amenities
+            </h2>
             <div className="flex flex-wrap gap-2">
               {hostel.amenities?.map((a) => (
                 <span
@@ -144,21 +155,22 @@ export default function HostelDetails() {
             </div>
           </div>
 
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 flex items-center gap-2">
+            <FontAwesomeIcon icon={faUsers} />
             <strong>Assigned Warden:</strong> {getWardenName(hostel.assignedWarden)}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <button
               onClick={() => setOpenBooking(true)}
-              className="bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition"
+              className="bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition w-full sm:w-auto text-center"
             >
               Book & Pay (Card)
             </button>
 
             <Link
               to="/hostels"
-              className="border border-gray-300 px-6 py-3 rounded-xl text-center hover:bg-gray-50 transition"
+              className="border border-gray-300 px-6 py-3 rounded-xl text-center hover:bg-gray-50 transition w-full sm:w-auto"
             >
               Back to Hostels
             </Link>
@@ -171,18 +183,21 @@ export default function HostelDetails() {
           hostel={hostel}
           onClose={() => setOpenBooking(false)}
           onConfirm={handleBookingConfirm}
-          disableMpesa={true} // Card only
+          disableMpesa={true}
         />
       )}
     </div>
   );
 }
 
-function Detail({ label, value }) {
+function Detail({ label, value, icon }) {
   return (
-    <div className="bg-gray-50 p-4 rounded-xl">
-      <strong>{label}</strong>
-      <p className="capitalize">{value}</p>
+    <div className="bg-gray-50 p-4 rounded-xl flex items-center gap-2">
+      {icon && <FontAwesomeIcon icon={icon} className="text-blue-700 w-4 h-4" />}
+      <div>
+        <strong>{label}</strong>
+        <p className="capitalize">{value}</p>
+      </div>
     </div>
   );
 }

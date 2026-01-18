@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMapMarkerAlt, faBed, faUserTie, faCheck } from "@fortawesome/free-solid-svg-icons";
 import {
   faUsers,
   faHome,
@@ -127,7 +128,7 @@ const Homepage = () => {
       <section className="bg-slate-50 py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-extrabold">Available Hostels</h2>
+            <h2 className="text-3xl font-extrabold">Top Hostels</h2>
             <Link to="/hostels" className="text-blue-700 font-semibold hover:underline">
               View All
             </Link>
@@ -141,8 +142,8 @@ const Homepage = () => {
             <div className="grid md:grid-cols-2 gap-10">
               {hostels
                 .filter((h) => h.status === "active")
-                .sort(() => 0.5 - Math.random()) // shuffle hostels
-                .slice(0, 2) // take only 2
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 2)
                 .map((hostel) => (
                   <div
                     key={hostel._id}
@@ -162,32 +163,40 @@ const Homepage = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-slate-600 mb-1">{hostel.location}</p>
-                      <p className="text-sm text-slate-500 mb-2">
-                        {hostel.roomType} room · {hostel.totalRooms || "N/A"} rooms
+
+                      <p className="text-slate-600 mb-1 flex items-center gap-1">
+                        <FontAwesomeIcon icon={faMapMarkerAlt} className="text-blue-500" /> {hostel.location}
                       </p>
-                      <p className="text-sm text-slate-500 mb-2">
-                        Warden: <span className="font-medium">{hostel.assignedWarden?.user?.name || "Unassigned"}</span>
+
+                      <p className="text-sm text-slate-500 mb-1 flex items-center gap-1">
+                        <FontAwesomeIcon icon={faBed} className="text-green-500" /> {hostel.roomType} room · {hostel.totalRooms || "N/A"} rooms
                       </p>
+
+                      <p className="text-sm text-slate-500 mb-2 flex items-center gap-1">
+                        <FontAwesomeIcon icon={faUserTie} className="text-rose-500" /> Warden: <span className="font-medium">{hostel.assignedWarden?.user?.name || "Unassigned"}</span>
+                      </p>
+
                       <div className="flex flex-wrap gap-2 mb-2 text-xs text-gray-600">
                         {hostel.amenities?.slice(0, 3).map((amenity) => (
-                          <span key={amenity} className="bg-gray-100 px-2 py-1 rounded">
-                            {amenity}
+                          <span key={amenity} className="bg-gray-100 px-2 py-1 rounded flex items-center gap-1">
+                            <FontAwesomeIcon icon={faCheck} className="text-green-500 text-[0.7rem]" /> {amenity}
                           </span>
                         ))}
                         {hostel.amenities?.length > 3 && (
                           <span className="text-gray-400">+{hostel.amenities.length - 3} more</span>
                         )}
                       </div>
+
                       <p className="text-lg font-bold mb-4">
-                        KES {hostel.price}
+                        KES {hostel.price.toLocaleString()}
                         <span className="text-sm font-normal text-gray-500"> / month</span>
                       </p>
+
                       <Link
                         to={`/hostels/${hostel._id}`}
-                        className="mt-auto block text-center bg-blue-700 text-white py-2 rounded-xl hover:bg-blue-800 transition"
+                        className="mt-auto block text-center bg-blue-700 text-white py-2 rounded-xl hover:bg-blue-800 transition flex justify-center items-center gap-2"
                       >
-                        View Details
+                        <FontAwesomeIcon icon={faMapMarkerAlt} /> View Details
                       </Link>
                     </div>
                   </div>
@@ -196,8 +205,6 @@ const Homepage = () => {
           )}
         </div>
       </section>
-
-
 
       {/* ================= CTA ================= */}
       <section className="bg-blue-700 text-white py-24 px-6 text-center">

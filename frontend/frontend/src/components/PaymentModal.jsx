@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCalendarAlt,
+  faMoneyBillWave,
+  faCreditCard,
+  faWallet,
+  faTimes,
+  faCheckCircle,
+} from "@fortawesome/free-solid-svg-icons";
 
 // -------------------- CONFIG --------------------
-// Replace this with your Stripe public key
-const stripePromise = loadStripe("pk_test_YourPublicKeyHere"); 
-
+const stripePromise = loadStripe("pk_test_YourPublicKeyHere");
 const paymentMethods = ["Mpesa", "Card"];
 
 export default function BookingModal({ hostel, onClose, onConfirm }) {
@@ -31,7 +38,7 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
       (end.getFullYear() - start.getFullYear()) * 12 +
       (end.getMonth() - start.getMonth()) +
       1;
-    return rawMonths > 0 ? rawMonths : 1; // Always at least 1 month
+    return rawMonths > 0 ? rawMonths : 1; // At least 1 month
   };
 
   const calculateTotals = () => {
@@ -48,27 +55,16 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
     setLoading(true);
     try {
       const stripe = await stripePromise;
-
-      // Call your backend to create a Stripe session
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: amountInKES, // amount in KES, backend will convert to cents/USD
-          hostelName: hostel.name,
-        }),
+        body: JSON.stringify({ amount: amountInKES, hostelName: hostel.name }),
       });
 
       const session = await response.json();
+      const result = await stripe.redirectToCheckout({ sessionId: session.id });
 
-      // Redirect to Stripe Checkout
-      const result = await stripe.redirectToCheckout({
-        sessionId: session.id,
-      });
-
-      if (result.error) {
-        alert(result.error.message);
-      }
+      if (result.error) alert(result.error.message);
     } catch (err) {
       console.error("Stripe payment error:", err);
       alert("Payment failed. Try again.");
@@ -90,7 +86,6 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
     }
 
     const bookingData = {
-      fullName: "", // fill from user profile
       hostel: hostel.name,
       roomType: hostel.roomType,
       bedsPerRoom: hostel.bedsPerRoom,
@@ -110,24 +105,32 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
     };
 
     if (paymentMethod === "Card") {
-      // Stripe payment flow
       await handleStripePayment(paidNow);
     } else {
-      // Mpesa or other method: confirm directly
       if (onConfirm) onConfirm(bookingData);
       onClose();
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-lg">
-        <h2 className="text-2xl font-bold mb-4">Book {hostel.name}</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-auto">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg animate-slide-in">
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <FontAwesomeIcon icon={faWallet} /> Book {hostel.name}
+          </h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <FontAwesomeIcon icon={faTimes} size="lg" />
+          </button>
+        </div>
 
-        {/* Dates */}
+        {/* DATES */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block mb-1 font-semibold">Check-In</label>
+            <label className="block mb-1 font-semibold flex items-center gap-1">
+              <FontAwesomeIcon icon={faCalendarAlt} /> Check-In
+            </label>
             <input
               type="date"
               value={checkIn}
@@ -136,7 +139,9 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
             />
           </div>
           <div>
-            <label className="block mb-1 font-semibold">Check-Out</label>
+            <label className="block mb-1 font-semibold flex items-center gap-1">
+              <FontAwesomeIcon icon={faCalendarAlt} /> Check-Out
+            </label>
             <input
               type="date"
               value={checkOut}
@@ -146,7 +151,7 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
           </div>
         </div>
 
-        {/* Months */}
+        {/* MONTHS */}
         <div className="mb-4">
           <input
             readOnly
@@ -155,10 +160,12 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
           />
         </div>
 
-        {/* Payments */}
+        {/* PAYMENTS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
-            <label className="block mb-1 font-semibold">Deposit</label>
+            <label className="block mb-1 font-semibold flex items-center gap-1">
+              <FontAwesomeIcon icon={faMoneyBillWave} /> Deposit
+            </label>
             <input
               type="number"
               value={deposit}
@@ -168,7 +175,9 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
             />
           </div>
           <div>
-            <label className="block mb-1 font-semibold">Amount to Pay Now</label>
+            <label className="block mb-1 font-semibold flex items-center gap-1">
+              <FontAwesomeIcon icon={faMoneyBillWave} /> Amount to Pay Now
+            </label>
             <input
               type="number"
               value={amountToPay}
@@ -178,7 +187,9 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
             />
           </div>
           <div>
-            <label className="block mb-1 font-semibold">Payment Method</label>
+            <label className="block mb-1 font-semibold flex items-center gap-1">
+              <FontAwesomeIcon icon={faCreditCard} /> Payment Method
+            </label>
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
@@ -193,7 +204,7 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
           </div>
         </div>
 
-        {/* Summary */}
+        {/* SUMMARY */}
         <div className="bg-gray-50 p-4 rounded-xl mb-4 text-sm space-y-1">
           <p>
             <strong>Total Amount:</strong> KES {totalAmount.toLocaleString()}
@@ -213,20 +224,20 @@ export default function BookingModal({ hostel, onClose, onConfirm }) {
           </p>
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-4">
+        {/* ACTIONS */}
+        <div className="flex flex-col md:flex-row justify-end gap-4">
           <button
             onClick={onClose}
-            className="px-6 py-2 rounded-xl bg-gray-300 hover:bg-gray-400"
+            className="px-6 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 flex items-center justify-center gap-1"
           >
-            Cancel
+            <FontAwesomeIcon icon={faTimes} /> Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="px-6 py-2 rounded-xl bg-orange-900 text-white hover:bg-orange-700"
+            className="px-6 py-2 rounded-xl bg-orange-900 text-white hover:bg-orange-700 flex items-center justify-center gap-1"
           >
-            {loading ? "Processing..." : "Confirm & Pay"}
+            {loading ? "Processing..." : <> <FontAwesomeIcon icon={faCheckCircle} /> Confirm & Pay</>}
           </button>
         </div>
       </div>

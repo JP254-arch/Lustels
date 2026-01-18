@@ -1,5 +1,18 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios"; // Auth-enabled Axios instance
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faHome,
+  faMapMarkerAlt,
+  faCoins,
+  faBed,
+  faHouseChimney,
+  faLock,
+  faWifi,
+  faCar,
+  faUtensils,
+  faLightbulb,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
   const initialState = {
@@ -27,13 +40,13 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
   const [wardensError, setWardensError] = useState("");
 
   const amenitiesList = [
-    "WiFi",
-    "Water",
-    "Electricity",
-    "Security",
-    "Meals",
-    "Parking",
-    "Study Room",
+    { name: "WiFi", icon: faWifi },
+    { name: "Water", icon: faUtensils },
+    { name: "Electricity", icon: faLightbulb },
+    { name: "Security", icon: faLock },
+    { name: "Meals", icon: faUtensils },
+    { name: "Parking", icon: faCar },
+    { name: "Study Room", icon: faHome },
   ];
 
   // ---------------- FETCH WARDENS ----------------
@@ -99,14 +112,16 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
     try {
       let res;
       if (hostelData?._id) {
-        // UPDATE
         res = await api.put(`/hostels/${hostelData._id}`, payload);
       } else {
-        // ADD NEW
         res = await api.post("/hostels", payload);
       }
 
-      setSuccess(hostelData ? "Hostel updated successfully!" : "Hostel added successfully!");
+      setSuccess(
+        hostelData
+          ? "Hostel updated successfully!"
+          : "Hostel added successfully!"
+      );
       if (onSubmit) onSubmit(res.data);
       if (!hostelData) setFormData(initialState);
       setTimeout(() => setSuccess(""), 3000);
@@ -139,24 +154,30 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
           <section>
             <h2 className="font-semibold mb-4 text-lg">Basic Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Hostel Name"
-                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="text"
-                name="location"
-                placeholder="City / Area"
-                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
-                value={formData.location}
-                onChange={handleChange}
-                required
-              />
+              <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+                <FontAwesomeIcon icon={faHome} className="text-gray-500" />
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Hostel Name"
+                  className="w-full outline-none"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="text-gray-500" />
+                <input
+                  type="text"
+                  name="location"
+                  placeholder="City / Area"
+                  className="w-full outline-none"
+                  value={formData.location}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
               <input
                 type="text"
                 name="address"
@@ -186,15 +207,18 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
           <section>
             <h2 className="font-semibold mb-4 text-lg">Pricing & Capacity</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="number"
-                name="price"
-                placeholder="Monthly Price (KES)"
-                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
-                value={formData.price}
-                onChange={handleChange}
-                required
-              />
+              <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+                <FontAwesomeIcon icon={faCoins} className="text-gray-500" />
+                <input
+                  type="number"
+                  name="price"
+                  placeholder="Monthly Price (KES)"
+                  className="w-full outline-none"
+                  value={formData.price}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
               <select
                 name="roomType"
                 className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
@@ -207,24 +231,30 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 <option value="double">Double</option>
                 <option value="shared">Shared / Dormitory</option>
               </select>
-              <input
-                type="number"
-                name="totalRooms"
-                placeholder="Total Rooms"
-                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
-                value={formData.totalRooms}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="number"
-                name="bedsPerRoom"
-                placeholder="Beds Per Room"
-                className="border p-3 rounded-xl focus:ring-2 focus:ring-orange-900 outline-none"
-                value={formData.bedsPerRoom}
-                onChange={handleChange}
-                required
-              />
+              <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+                <FontAwesomeIcon icon={faHouseChimney} className="text-gray-500" />
+                <input
+                  type="number"
+                  name="totalRooms"
+                  placeholder="Total Rooms"
+                  className="w-full outline-none"
+                  value={formData.totalRooms}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+                <FontAwesomeIcon icon={faBed} className="text-gray-500" />
+                <input
+                  type="number"
+                  name="bedsPerRoom"
+                  placeholder="Beds Per Room"
+                  className="w-full outline-none"
+                  value={formData.bedsPerRoom}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
             {formData.totalRooms && formData.bedsPerRoom && (
               <p className="mt-3 text-sm text-gray-600">
@@ -242,15 +272,16 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {amenitiesList.map((amenity) => (
                 <label
-                  key={amenity}
+                  key={amenity.name}
                   className="flex items-center gap-2 border rounded-xl p-3 cursor-pointer hover:bg-gray-50"
                 >
                   <input
                     type="checkbox"
-                    checked={formData.amenities.includes(amenity)}
-                    onChange={() => handleAmenityChange(amenity)}
+                    checked={formData.amenities.includes(amenity.name)}
+                    onChange={() => handleAmenityChange(amenity.name)}
                   />
-                  <span>{amenity}</span>
+                  <FontAwesomeIcon icon={amenity.icon} className="text-gray-500" />
+                  <span>{amenity.name}</span>
                 </label>
               ))}
             </div>
@@ -279,8 +310,6 @@ export default function AddOrUpdateHostel({ hostelData = null, onSubmit }) {
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </select>
-
-              {/* Wardens */}
               <select
                 name="assignedWarden"
                 value={formData.assignedWarden}

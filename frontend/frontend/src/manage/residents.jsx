@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios";
 import AddOrUpdateResident from "../Forms/residentform";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUser,
+  faBuilding,
+  faDoorClosed,
+  faToggleOn,
+  faCalendarAlt,
+  faPlus,
+  faPen,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function ManageResidents() {
   const [residents, setResidents] = useState([]);
@@ -17,16 +28,12 @@ export default function ManageResidents() {
       setError("");
 
       const [resResidents, resHostels] = await Promise.all([
-        api.get("/residents"), // Protected route; token needed
+        api.get("/residents"),
         api.get("/hostels"),
       ]);
 
-      // Ensure resident list is fully populated
       setResidents(
-        resResidents.data.map((r) => ({
-          ...r,
-          hostel: r.hostel || null,
-        }))
+        resResidents.data.map((r) => ({ ...r, hostel: r.hostel || null }))
       );
       setHostels(resHostels.data);
     } catch (err) {
@@ -41,7 +48,7 @@ export default function ManageResidents() {
     fetchData();
   }, []);
 
-  // ================= HANDLE SAVE (CREATE / UPDATE) =================
+  // ================= HANDLE SAVE =================
   const handleSave = (resident) => {
     const exists = residents.find((r) => r._id === resident._id);
     if (exists) {
@@ -68,44 +75,60 @@ export default function ManageResidents() {
     }
   };
 
-  // ================= LOADING / ERROR =================
   if (loading)
-    return <p className="p-6 text-center">Loading data...</p>;
+    return <p className="p-6 text-center text-gray-600">Loading data...</p>;
 
   if (error)
     return <p className="p-6 text-center text-red-600">{error}</p>;
 
-  // ================= UI =================
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       {!showForm ? (
         <>
-          <div className="flex justify-between items-center mb-6">
+          {/* HEADER */}
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <h1 className="text-2xl font-bold">Manage Residents</h1>
             <button
               onClick={() => setShowForm(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
             >
-              ➕ Add Resident
+              <FontAwesomeIcon icon={faPlus} />
+              Add Resident
             </button>
           </div>
 
+          {/* TABLE */}
           <div className="overflow-x-auto bg-white rounded-2xl shadow p-4">
-            <table className="w-full table-auto">
+            <table className="w-full table-auto border-collapse">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="p-2">Name</th>
-                  <th className="p-2">Hostel</th>
-                  <th className="p-2">Room / Bed</th>
-                  <th className="p-2">Status</th>
-                  <th className="p-2">Check-In</th>
-                  <th className="p-2">Check-Out</th>
-                  <th className="p-2">Actions</th>
+                  <th className="p-2 text-left">
+                    <FontAwesomeIcon icon={faUser} /> Name
+                  </th>
+                  <th className="p-2 text-left">
+                    <FontAwesomeIcon icon={faBuilding} /> Hostel
+                  </th>
+                  <th className="p-2 text-left">
+                    <FontAwesomeIcon icon={faDoorClosed} /> Room / Bed
+                  </th>
+                  <th className="p-2 text-left">
+                    <FontAwesomeIcon icon={faToggleOn} /> Status
+                  </th>
+                  <th className="p-2 text-left">
+                    <FontAwesomeIcon icon={faCalendarAlt} /> Check-In
+                  </th>
+                  <th className="p-2 text-left">
+                    <FontAwesomeIcon icon={faCalendarAlt} /> Check-Out
+                  </th>
+                  <th className="p-2 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {residents.map((r) => (
-                  <tr key={r._id} className="text-center border-t">
+                  <tr
+                    key={r._id}
+                    className="text-center md:text-left border-t hover:bg-gray-50 transition"
+                  >
                     <td className="p-2">{r.name}</td>
                     <td className="p-2">{r.hostel?.name || "—"}</td>
                     <td className="p-2">
@@ -130,21 +153,21 @@ export default function ManageResidents() {
                         ? new Date(r.checkOut).toLocaleDateString()
                         : "—"}
                     </td>
-                    <td className="p-2 space-x-2">
+                    <td className="p-2 flex flex-wrap justify-center md:justify-start gap-2">
                       <button
                         onClick={() => {
                           setEditingResident(r);
                           setShowForm(true);
                         }}
-                        className="bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700"
+                        className="flex items-center gap-1 bg-indigo-600 text-white px-3 py-1 rounded-lg hover:bg-indigo-700"
                       >
-                        Edit
+                        <FontAwesomeIcon icon={faPen} /> Edit
                       </button>
                       <button
                         onClick={() => handleDelete(r._id)}
-                        className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700"
+                        className="flex items-center gap-1 bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700"
                       >
-                        Delete
+                        <FontAwesomeIcon icon={faTrash} /> Delete
                       </button>
                     </td>
                   </tr>

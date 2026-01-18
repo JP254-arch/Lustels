@@ -1,12 +1,8 @@
 import React, { useEffect } from "react";
-// Optional: uncomment if you want animations
-// import AOS from "aos";
-// import "aos/dist/aos.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEnvelope, faPhone, faMapMarkerAlt, faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 
 const Contact = () => {
-  // Optional: initialize AOS
-  // useEffect(() => { AOS.init({ duration: 1000, once: false, mirror: true }); }, []);
-
   useEffect(() => {
     const form = document.getElementById("contactForm");
     const formMessage = document.getElementById("formMessage");
@@ -49,22 +45,22 @@ const Contact = () => {
   return (
     <section className="min-h-screen bg-gray-50 flex items-center py-16 px-4">
       <div className="container mx-auto max-w-6xl">
-        {/* Title */}
+        {/* TITLE */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold text-rose-600 mb-4">
-            📚 Contact <span className="text-indigo-700">Lustels</span>
+            <span className="inline-block animate-pulse">📚</span> Contact <span className="text-indigo-700">Lustels</span>
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto text-lg">
             Have a question, suggestion, or just want to say hi? We’d love to hear from you — your words are as valuable as our system!
           </p>
         </div>
 
-        {/* Layout */}
+        {/* LAYOUT */}
         <div className="flex flex-col lg:flex-row gap-10 items-stretch">
-          {/* Left: Contact Form */}
+          {/* LEFT: CONTACT FORM */}
           <div className="lg:w-1/2 bg-white rounded-2xl shadow-2xl border border-gray-100 p-8">
-            <h2 className="text-2xl font-semibold text-rose-700 mb-6 text-center">
-              Send Us a Message
+            <h2 className="text-2xl font-semibold text-rose-700 mb-6 text-center flex justify-center items-center gap-2">
+              <FontAwesomeIcon icon={faPaperPlane} /> Send Us a Message
             </h2>
             <form
               id="contactForm"
@@ -116,9 +112,9 @@ const Contact = () => {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-all duration-200"
+                className="w-full bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-all duration-200 flex justify-center items-center gap-2"
               >
-                ✉️ Send Message
+                <FontAwesomeIcon icon={faPaperPlane} /> Send Message
               </button>
             </form>
 
@@ -128,26 +124,31 @@ const Contact = () => {
             ></div>
           </div>
 
-          {/* Right: Contact Info */}
+          {/* RIGHT: CONTACT INFO */}
           <div className="lg:w-1/2 flex flex-col justify-center bg-gradient-to-br from-indigo-50 to-rose-50 p-10 rounded-2xl shadow-inner border border-gray-100">
-            <h2 className="text-2xl font-semibold text-indigo-700 mb-6">Or Reach Us Directly</h2>
+            <h2 className="text-2xl font-semibold text-indigo-700 mb-6 flex items-center gap-2">
+              <FontAwesomeIcon icon={faEnvelope} /> Or Reach Us Directly
+            </h2>
 
-            <div className="space-y-4 text-gray-700">
-              <p>
-                <span className="font-medium text-rose-600">📧 Email:</span>{" "}
+            <div className="space-y-4 text-gray-700 text-lg">
+              <p className="flex items-center gap-2">
+                <FontAwesomeIcon icon={faEnvelope} className="text-rose-600" />
+                <span className="font-medium text-rose-600">Email:</span>{" "}
                 <a href="mailto:info@lustels.com" className="text-indigo-600 hover:underline">info@lustels.com</a> |{" "}
                 <a href="mailto:helpline@lustels.com" className="text-indigo-600 hover:underline">helpline@lustels.com</a>
               </p>
-              <p>
-                <span className="font-medium text-rose-600">📞 Phone:</span>{" "}
+              <p className="flex items-center gap-2">
+                <FontAwesomeIcon icon={faPhone} className="text-rose-600" />
+                <span className="font-medium text-rose-600">Phone:</span>{" "}
                 <a href="tel:+1234567890" className="text-indigo-600 hover:underline">+1 (234) 567-890</a>
               </p>
-              <p>
-                <span className="font-medium text-rose-600">📌 Address:</span> 123 Lustels St, Knowledge City
+              <p className="flex items-center gap-2">
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="text-rose-600" />
+                <span className="font-medium text-rose-600">Address:</span> 123 Lustels St, Knowledge City
               </p>
             </div>
 
-            <div className="mt-8 text-gray-500 text-sm italic border-t border-gray-200 pt-4">
+            <div className="mt-8 text-gray-500 text-sm italic border-t border-gray-200 pt-4 text-center">
               “Lustels — where curiosity meets knowledge, and every student has a story to tell.”
             </div>
           </div>

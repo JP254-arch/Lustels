@@ -1,5 +1,18 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUser,
+  faEnvelope,
+  faPhone,
+  faVenusMars,
+  faBuilding,
+  faDoorClosed,
+  faBed,
+  faCalendarAlt,
+  faToggleOn,
+  faStickyNote,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function AddOrUpdateResident({
   residentData = null,
@@ -25,7 +38,7 @@ export default function AddOrUpdateResident({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* ================= PREFILL (UPDATE MODE) ================= */
+  // ---------------- PREFILL (UPDATE MODE) ----------------
   useEffect(() => {
     if (residentData) {
       setFormData({
@@ -47,14 +60,13 @@ export default function AddOrUpdateResident({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  /* ================= SUBMIT ================= */
+  // ---------------- SUBMIT ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      // Map form fields to backend schema fields
       const payload = {
         ...formData,
         checkIn: formData.checkInDate ? new Date(formData.checkInDate) : null,
@@ -86,113 +98,156 @@ export default function AddOrUpdateResident({
       {error && <p className="text-red-500">{error}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          name="name"
-          placeholder="Resident Name"
-          className="border p-3 rounded-xl"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
+        {/* Name */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faUser} className="text-gray-500" />
+          <input
+            name="name"
+            placeholder="Resident Name"
+            className="w-full outline-none"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          className="border p-3 rounded-xl"
-          value={formData.email}
-          onChange={handleChange}
-        />
+        {/* Email */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faEnvelope} className="text-gray-500" />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            className="w-full outline-none"
+            value={formData.email}
+            onChange={handleChange}
+          />
+        </div>
 
-        <input
-          name="phone"
-          placeholder="Phone Number"
-          className="border p-3 rounded-xl"
-          value={formData.phone}
-          onChange={handleChange}
-        />
+        {/* Phone */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faPhone} className="text-gray-500" />
+          <input
+            name="phone"
+            placeholder="Phone Number"
+            className="w-full outline-none"
+            value={formData.phone}
+            onChange={handleChange}
+          />
+        </div>
 
-        <select
-          name="gender"
-          value={formData.gender}
-          onChange={handleChange}
-          className="border p-3 rounded-xl"
-        >
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
+        {/* Gender */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faVenusMars} className="text-gray-500" />
+          <select
+            name="gender"
+            value={formData.gender}
+            onChange={handleChange}
+            className="w-full outline-none bg-transparent"
+          >
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
 
-        {/* ================= HOSTEL ================= */}
-        <select
-          name="hostel"
-          value={formData.hostel}
-          onChange={handleChange}
-          className="border p-3 rounded-xl md:col-span-2"
-          required
-        >
-          <option value="">Select Hostel</option>
-          {hostels.map((h) => (
-            <option key={h._id} value={h._id}>
-              {h.name}
-            </option>
-          ))}
-        </select>
+        {/* Hostel */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl md:col-span-2 focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faBuilding} className="text-gray-500" />
+          <select
+            name="hostel"
+            value={formData.hostel}
+            onChange={handleChange}
+            className="w-full outline-none bg-transparent"
+            required
+          >
+            <option value="">Select Hostel</option>
+            {hostels.map((h) => (
+              <option key={h._id} value={h._id}>
+                {h.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <input
-          name="roomNumber"
-          placeholder="Room Number"
-          className="border p-3 rounded-xl"
-          value={formData.roomNumber}
-          onChange={handleChange}
-        />
+        {/* Room Number */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faDoorClosed} className="text-gray-500" />
+          <input
+            name="roomNumber"
+            placeholder="Room Number"
+            className="w-full outline-none"
+            value={formData.roomNumber}
+            onChange={handleChange}
+          />
+        </div>
 
-        <input
-          name="bedNumber"
-          placeholder="Bed Number"
-          className="border p-3 rounded-xl"
-          value={formData.bedNumber}
-          onChange={handleChange}
-        />
+        {/* Bed Number */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faBed} className="text-gray-500" />
+          <input
+            name="bedNumber"
+            placeholder="Bed Number"
+            className="w-full outline-none"
+            value={formData.bedNumber}
+            onChange={handleChange}
+          />
+        </div>
+
+        {/* Status */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faToggleOn} className="text-gray-500" />
+          <select
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+            className="w-full outline-none bg-transparent"
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        {/* Check-In Date */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-500" />
+          <input
+            type="date"
+            name="checkInDate"
+            value={formData.checkInDate}
+            onChange={handleChange}
+            className="w-full outline-none"
+          />
+        </div>
+
+        {/* Check-Out Date */}
+        <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-500" />
+          <input
+            type="date"
+            name="checkOutDate"
+            value={formData.checkOutDate}
+            onChange={handleChange}
+            className="w-full outline-none"
+          />
+        </div>
+
+        {/* Notes */}
+        <div className="flex items-start gap-2 border p-3 rounded-xl md:col-span-2 focus-within:ring-2 focus-within:ring-orange-900">
+          <FontAwesomeIcon icon={faStickyNote} className="text-gray-500 mt-1" />
+          <textarea
+            name="notes"
+            rows={3}
+            placeholder="Notes / Comments"
+            className="w-full outline-none resize-none"
+            value={formData.notes}
+            onChange={handleChange}
+          />
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <select
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-          className="border p-3 rounded-xl"
-        >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-
-        <input
-          type="date"
-          name="checkInDate"
-          value={formData.checkInDate}
-          onChange={handleChange}
-          className="border p-3 rounded-xl"
-        />
-
-        <input
-          type="date"
-          name="checkOutDate"
-          value={formData.checkOutDate}
-          onChange={handleChange}
-          className="border p-3 rounded-xl"
-        />
-      </div>
-
-      <textarea
-        name="notes"
-        rows={3}
-        className="border p-3 rounded-xl w-full"
-        value={formData.notes}
-        onChange={handleChange}
-      />
-
-      <div className="flex gap-4">
+      {/* Buttons */}
+      <div className="flex flex-col md:flex-row gap-4">
         <button
           type="submit"
           disabled={loading}

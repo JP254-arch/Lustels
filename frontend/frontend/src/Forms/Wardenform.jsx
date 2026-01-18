@@ -1,5 +1,15 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios"; // token-aware axios instance
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUser,
+  faEnvelope,
+  faLock,
+  faPhone,
+  faVenusMars,
+  faCalendarAlt,
+  faBuilding,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function WardenForm({ wardenData = null, onSuccess }) {
   const [form, setForm] = useState({
@@ -99,12 +109,8 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
 
       if (wardenData?._id) {
         // Update existing warden
-        // Remove password if blank
         if (!payload.password) delete payload.password;
-
         res = await api.put(`/wardens/${wardenData._id}`, payload);
-
-        // If password provided, update it separately
         if (form.password) {
           await api.put(`/wardens/${wardenData._id}/password`, { password: form.password });
           setSuccess("Warden updated and password changed successfully!");
@@ -112,7 +118,6 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
           setSuccess("Warden updated successfully!");
         }
       } else {
-        // Create new warden
         res = await api.post("/wardens", payload);
         setSuccess("Warden added successfully!");
         if (res.data.temporaryPassword) showToast(res.data.temporaryPassword);
@@ -129,8 +134,8 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 flex justify-center">
-      <div className="max-w-md w-full bg-white p-6 rounded-2xl shadow-lg">
-        <h1 className="text-2xl font-bold mb-6">
+      <div className="max-w-md w-full bg-white p-6 rounded-2xl shadow-lg space-y-4">
+        <h1 className="text-2xl font-bold mb-2">
           {wardenData ? "Update Warden" : "Add New Warden"}
         </h1>
 
@@ -138,87 +143,126 @@ export default function WardenForm({ wardenData = null, onSuccess }) {
         {success && <p className="text-green-500 mb-2">{success}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            placeholder="Full Name"
-            className="border p-3 rounded-xl w-full"
-            required
-          />
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="Email"
-            className="border p-3 rounded-xl w-full"
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            placeholder={wardenData ? "New Password (optional)" : "Password"}
-            className="border p-3 rounded-xl w-full"
-            required={!wardenData}
-          />
+          {/* Name */}
+          <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+            <FontAwesomeIcon icon={faUser} className="text-gray-500" />
+            <input
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="Full Name"
+              className="w-full outline-none"
+              required
+            />
+          </div>
 
-          <select
-            name="assignedHostels"
-            value={form.assignedHostels}
-            onChange={handleChange}
-            className="border p-3 rounded-xl w-full"
-            multiple
-            size={Math.min(hostels.length, 5)}
-            disabled={loadingHostels || !!hostelError}
-            required
-          >
-            {hostels.map((h) => (
-              <option key={h._id} value={h._id}>
-                {h.name} ({h.location || "No location"})
-              </option>
-            ))}
-          </select>
+          {/* Email */}
+          <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+            <FontAwesomeIcon icon={faEnvelope} className="text-gray-500" />
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="Email"
+              className="w-full outline-none"
+              required
+            />
+          </div>
 
-          <input
-            name="phone"
-            value={form.phone}
-            onChange={handleChange}
-            placeholder="Phone Number"
-            className="border p-3 rounded-xl w-full"
-          />
+          {/* Password */}
+          <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+            <FontAwesomeIcon icon={faLock} className="text-gray-500" />
+            <input
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              placeholder={wardenData ? "New Password (optional)" : "Password"}
+              className="w-full outline-none"
+              required={!wardenData}
+            />
+          </div>
 
-          <select
-            name="gender"
-            value={form.gender}
-            onChange={handleChange}
-            className="border p-3 rounded-xl w-full"
-            required
-          >
-            <option value="">Select Gender</option>
-            {genderOptions.map((g) => (
-              <option key={g} value={g}>
-                {g.charAt(0).toUpperCase() + g.slice(1)}
-              </option>
-            ))}
-          </select>
+          {/* Phone */}
+          <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+            <FontAwesomeIcon icon={faPhone} className="text-gray-500" />
+            <input
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="Phone Number"
+              className="w-full outline-none"
+            />
+          </div>
 
-          <input
-            type="date"
-            name="dob"
-            value={form.dob}
-            onChange={handleChange}
-            className="border p-3 rounded-xl w-full"
-          />
+          {/* Gender */}
+          <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+            <FontAwesomeIcon icon={faVenusMars} className="text-gray-500" />
+            <select
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              className="w-full outline-none bg-transparent"
+              required
+            >
+              <option value="">Select Gender</option>
+              {genderOptions.map((g) => (
+                <option key={g} value={g}>
+                  {g.charAt(0).toUpperCase() + g.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
 
+          {/* DOB */}
+          <div className="flex items-center gap-2 border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+            <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-500" />
+            <input
+              type="date"
+              name="dob"
+              value={form.dob}
+              onChange={handleChange}
+              className="w-full outline-none"
+            />
+          </div>
+
+          {/* Assigned Hostels */}
+          <div className="flex flex-col border p-3 rounded-xl focus-within:ring-2 focus-within:ring-orange-900">
+            <label className="mb-1 font-semibold flex items-center gap-2">
+              <FontAwesomeIcon icon={faBuilding} /> Assign Hostels
+            </label>
+            <select
+              name="assignedHostels"
+              value={form.assignedHostels}
+              onChange={handleChange}
+              multiple
+              size={Math.min(hostels.length, 5)}
+              disabled={loadingHostels || !!hostelError}
+              required
+              className="outline-none"
+            >
+              {hostels.map((h) => (
+                <option key={h._id} value={h._id}>
+                  {h.name} ({h.location || "No location"})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Submit */}
           <button
             type="submit"
             disabled={submitLoading}
             className="bg-orange-900 text-white px-5 py-3 rounded-xl w-full hover:bg-orange-800 transition font-semibold disabled:opacity-50"
           >
-            {submitLoading ? (wardenData ? "Updating..." : "Adding...") : wardenData ? "Update Warden" : "Add Warden"}
+            {submitLoading
+              ? wardenData
+                ? "Updating..."
+                : "Adding..."
+              : wardenData
+              ? "Update Warden"
+              : "Add Warden"}
           </button>
         </form>
       </div>
