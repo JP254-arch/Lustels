@@ -1,0 +1,16 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+.env
+
+# Frontend build
+frontend/build/
+
+# Backend build
+backend/node_modules/
+backend/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
